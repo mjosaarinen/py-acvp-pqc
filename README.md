@@ -63,13 +63,13 @@ def nist_mldsa_keygen(seed, param='ML-DSA-65'):
 Sign a message:
 ```py
 def nist_mldsa_sign(sk, m, det, param='ML-DSA-65'):
-    """ sig = ML-DSA.Sign(sk, M, det, param='ML-DSA-64'). """
+    """ sig = ML-DSA.Sign(sk, M, det, param='ML-DSA-65'). """
 ```
 
 Verify a signature:
 ```py
 def nist_mldsa_verify(pk, m, sig, param='ML-DSA-65'):
-    """ True/False = ML-DSA.Verify(pk, M, sig, param='ML-DSA-64'). """
+    """ True/False = ML-DSA.Verify(pk, M, sig, param='ML-DSA-65'). """
 ```
 
 Test module [test_mldsa.py](test_mldsa.py) parses the Dilithium test vectors in the ACVP-Server repo and executes the related tests using the wrapper functions.
