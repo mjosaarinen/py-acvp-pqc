@@ -4,7 +4,7 @@
 
 #   Background
 
-Functional validation of crypto algorithms in the FIPS 140-3 scheme is based on NIST's Automated Cryptographic Validation Test System (ACVTS). This system contains crypto algorithm implementations that effectively serve as the "golden reference" for algorithm validation: They are used to generate randomized test cases in ACVTS. 
+Functional validation of crypto algorithms in the FIPS 140-3 scheme is based on NIST's Automated Cryptographic Validation Test System (ACVTS). This system contains crypto algorithm implementations that effectively serve as the "golden reference" for algorithm validation: They are used to generate randomized test cases in ACVTS.
 
 The crypto implementations used by NIST's [ACVP-Server](https://github.com/usnistgov/ACVP-Server) are written in C# and run on Microsoft's .NET framework (version 6). Recently implementations of the new NIST PQC standards
 Kyber ([Kyber.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/Kyber/Kyber.cs) for [FIPS 203 ML-KEM](https://doi.org/10.6028/NIST.FIPS.203.ipd)),
@@ -85,10 +85,11 @@ _( If you're curious why 30 test vectors are "skipped," The non-deterministic si
 
 #   Step-by-step Running Instructions
 
-This is very hacky: The followign steps were executed on a fresh install of Ubuntu 24.04 LTS on July 3, 2024 and it worked then. If it doesn't work for you, too bad -- NIST ACVTS code is in flux and .NET6 is at its End of Service in 2024, etc. 
+This is very hacky: The followign steps were executed on a fresh install of Ubuntu 24.04 LTS on July 3, 2024 and it worked then. If it doesn't work for you, too bad -- NIST ACVTS code is in flux and .NET6 is at its End of Service in 2024, etc.
 
-Clone this repo
+Install git, if needed, and clone this repo:
 ```
+$ sudo apt install git
 $ git clone https://github.com/mjosaarinen/py-acvp-pqc.git
 $ cd py-acvp-pqc
 ```
@@ -98,10 +99,11 @@ $ cd py-acvp-pqc
 Following [Microsoft's instructions for .NET on Ubuntu](https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu):
 ```console
 $ sudo add-apt-repository ppa:dotnet/backports
+(press [ENTER])
 $ sudo apt install dotnet-sdk-6.0
+(press [ENTER])
 ```
 Note that you need the SDK as you're compiling C# code. If you're using a more stripped-down distro than Ubuntu, you will encounter many more dependencies.
-
 
 ### Build the needed .dll files
 
@@ -109,11 +111,10 @@ Fetch the ACVP server sources (it's big!). We will put it right here under the p
 ```console
 $ git clone https://github.com/usnistgov/ACVP-Server.git
 ```
-We perform some preparatory steps:
+Some preparatory steps for local installation:
 ```console
 $ cd ACVP-Server
-$ rm -f Directory.Build.prop
-$ rm -f Directory.Packages.props
+$ rm -f Directory.Build.prop Directory.Packages.props
 $ ln -s ./_config/Directory.Build.props
 $ ln -s ./_config/Directory.Packages.props
 ```
@@ -138,24 +139,22 @@ We're using [Pythonnet](http://pythonnet.github.io/) and you will probably have 
 $ sudo apt install python3-venv
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-$ pip3 install pythonnet
+(.venv) $ pip3 install pythonnet
 ```
 
 Note that you will have to "enter" the enviroment with `source .venv/bin/activate` to use pythonnet installed locally this way.
 
 Anyway, we should now be able to execute our Kyber and Dilithium test programs:
 ```
-$ python3 test_mlkem.py
+(.venv) $ python3 test_mlkem.py
 ML-KEM KeyGen: PASS= 75  FAIL= 0
 ML-KEM Encaps: PASS= 75  FAIL= 0
 ML-KEM Decaps: PASS= 30  FAIL= 0
 
-$ python3 test_mldsa.py
+(.venv) $ python3 test_mldsa.py
 ML-DSA KeyGen: PASS= 75  FAIL= 0
 ML-DSA SigGen: PASS= 30  FAIL= 0  SKIP= 30
 ML-DSA SigVer: PASS= 45  FAIL= 0
 ```
 This is a success!
-
-
 
