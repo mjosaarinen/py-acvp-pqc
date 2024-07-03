@@ -101,7 +101,6 @@ Following [Microsoft's instructions for .NET on Ubuntu](https://learn.microsoft.
 $ sudo add-apt-repository ppa:dotnet/backports
 (press [ENTER])
 $ sudo apt install dotnet-sdk-6.0
-(press [ENTER])
 ```
 Note that you need the SDK as you're compiling C# code. If you're using a more stripped-down distro than Ubuntu, you will encounter many more dependencies.
 
