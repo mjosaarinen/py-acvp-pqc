@@ -1,0 +1,3 @@
+pycryptodome    # https://pypi.org/project/pycryptodome/
+pythonnet		# https://pypi.org/project/pythonnet/
+

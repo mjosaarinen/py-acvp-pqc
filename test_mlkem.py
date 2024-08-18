@@ -3,147 +3,174 @@
 #   === ML-KEM / Kyber KAT test with json files
 
 import json
-from nist_mlkem import nist_mlkem_keygen, nist_mlkem_encaps, nist_mlkem_decaps
 
 #   === read json prompts and responses ===
 
-json_path = 'ACVP-Server/gen-val/json-files/'
-
 #   KeyGen KATs
 
-with open(json_path + 'ML-KEM-keyGen-FIPS203/prompt.json') as f:
-    keygen_req = json.load(f)
-with open(json_path + 'ML-KEM-keyGen-FIPS203/expectedResults.json') as f:
-    keygen_res = json.load(f)
+def mlkem_load_keygen(req_fn, res_fn):
+    with open(req_fn) as f:
+        keygen_req = json.load(f)
+    with open(res_fn) as f:
+        keygen_res = json.load(f)
 
-keygen_kat = []
-for qtg in keygen_req['testGroups']:
-    alg = qtg['parameterSet']
-    tgid = qtg['tgId']
+    keygen_kat = []
+    for qtg in keygen_req['testGroups']:
+        alg = qtg['parameterSet']
+        tgid = qtg['tgId']
 
-    rtg = None
-    for tg in keygen_res['testGroups']:
-        if tg['tgId'] == tgid:
-            rtg = tg['tests']
-            break
+        rtg = None
+        for tg in keygen_res['testGroups']:
+            if tg['tgId'] == tgid:
+                rtg = tg['tests']
+                break
 
-    for qt in qtg['tests']:
-        tcid = qt['tcId']
-        for t in rtg:
-            if t['tcId'] == tcid:
-                qt.update(t)
-        qt['parameterSet'] = alg
-        keygen_kat += [qt]
+        for qt in qtg['tests']:
+            tcid = qt['tcId']
+            for t in rtg:
+                if t['tcId'] == tcid:
+                    qt.update(t)
+            qt['parameterSet'] = alg
+            keygen_kat += [qt]
 
+    return keygen_kat
 
-#   Encaps and Decaps KATs
+#   Perfrom key generation tests on keygen_func
 
-with open(json_path + 'ML-KEM-encapDecap-FIPS203/prompt.json') as f:
-    encdec_req = json.load(f)
-with open(json_path + 'ML-KEM-encapDecap-FIPS203/expectedResults.json') as f:
-    encdec_res = json.load(f)
+def mlkem_test_keygen(keygen_kat, keygen_func, iut=''):
+    keygen_pass = 0
+    keygen_fail = 0
 
-encap_kat = []
-decap_kat = []
-for qtg in encdec_req['testGroups']:
-    alg = qtg['parameterSet']
-    func = qtg['function']
-    tgid = qtg['tgId']
+    for x in keygen_kat:
+        #   run keygen
+        (ek, dk)    = keygen_func(  bytes.fromhex(x['d']),
+                                    bytes.fromhex(x['z']),
+                                    x['parameterSet'])
 
-    rtg = None
-    for tg in encdec_res['testGroups']:
-        if tg['tgId'] == tgid:
-            rtg = tg['tests']
-            break
-
-    for qt in qtg['tests']:
-        tcid = qt['tcId']
-        for t in rtg:
-            if t['tcId'] == tcid:
-                qt.update(t)
-        qt['parameterSet'] = alg
-        if func == 'encapsulation':
-            encap_kat += [qt]
-        elif func == 'decapsulation':
-            qt['dk'] = qtg['dk']
-            decap_kat += [qt]
+        #   compare
+        tc  = x['parameterSet'] + ' KeyGen/' + str(x['tcId'])
+        if ek == bytes.fromhex(x['ek']) and dk == bytes.fromhex(x['dk']):
+            keygen_pass += 1
+            #print(tc, 'ok')
         else:
-            print('ERROR: Unkonwn function:', func)
+            keygen_fail += 1
+            print(tc, 'ek ref=', x['ek'])
+            print(tc, 'ek got=', ek.hex())
+            print(tc, 'dk ref=', x['dk'])
+            print(tc, 'dk got=', dk.hex())
 
+    print(f'ML-KEM KeyGen {iut}: PASS= {keygen_pass}  FAIL= {keygen_fail}')
+    return keygen_fail
+
+#   Load encaps and decaps KATs
+
+def mlkem_load_encdec(req_fn, res_fn):
+    with open(req_fn) as f:
+        encdec_req = json.load(f)
+    with open(res_fn) as f:
+        encdec_res = json.load(f)
+
+    encaps_kat = []
+    decaps_kat = []
+    for qtg in encdec_req['testGroups']:
+        alg = qtg['parameterSet']
+        func = qtg['function']
+        tgid = qtg['tgId']
+
+        rtg = None
+        for tg in encdec_res['testGroups']:
+            if tg['tgId'] == tgid:
+                rtg = tg['tests']
+                break
+
+        for qt in qtg['tests']:
+            tcid = qt['tcId']
+            for t in rtg:
+                if t['tcId'] == tcid:
+                    qt.update(t)
+            qt['parameterSet'] = alg
+            if func == 'encapsulation':
+                encaps_kat += [qt]
+            elif func == 'decapsulation':
+                qt['dk'] = qtg['dk']
+                decaps_kat += [qt]
+            else:
+                print('ERROR: Unkonwn function:', func)
+
+    return (encaps_kat, decaps_kat)
+
+#   Perform encapsulation tests on encaps_func
+
+def mlkem_test_encaps(encaps_kat, encaps_func, iut=''):
+    encaps_pass = 0
+    encaps_fail = 0
+    for x in encaps_kat:
+
+        #   run encaps
+        (k, c) = encaps_func(bytes.fromhex  (x['ek']),
+                                            bytes.fromhex(x['m']),
+                                            x['parameterSet'])
+
+        #   compare
+        tc  = x['parameterSet'] + ' Encaps/' + str(x['tcId'])
+        if k == bytes.fromhex(x['k']) and c == bytes.fromhex(x['c']):
+            encaps_pass += 1
+            #print(tc, 'ok')
+        else:
+            encaps_fail += 1
+            print(tc, 'k ref=', x['k'])
+            print(tc, 'k got=', k.hex())
+            print(tc, 'c ref=', x['c'])
+            print(tc, 'c got=', c.hex())
+
+    print(f'ML-KEM Encaps {iut}: PASS= {encaps_pass}  FAIL= {encaps_fail}')
+    return encaps_fail
+
+#   Perform decapsulation tests on decaps_func
+
+def mlkem_test_decaps(decaps_kat, decaps_func, iut=''):
+    decaps_pass = 0
+    decaps_fail = 0
+    for x in decaps_kat:
+
+        #   run decaps
+        k   = decaps_func(  bytes.fromhex(x['dk']),
+                             bytes.fromhex(x['c']),
+                             x['parameterSet'])
+
+        #   compare
+        tc  = x['parameterSet'] + ' Decaps/' + str(x['tcId'])
+        if k == bytes.fromhex(x['k']):
+            decaps_pass += 1
+            #print(tc, 'ok')
+        else:
+            decaps_fail += 1
+            print(tc, 'k ref=', x['k'])
+            print(tc, 'k got=', k.hex())
+
+    print(f'ML-KEM Decaps {iut}: PASS= {decaps_pass}  FAIL= {decaps_fail}')
+    return decaps_fail
 
 #   === run the tests ===
 
-#   key generation tests
+#   load all KATs
+#json_path = 'ACVP-Server/gen-val/json-files/'
+json_path = 'json-copy/'
 
-keygen_pass = 0
-keygen_fail = 0
+keygen_kat = mlkem_load_keygen(
+                json_path + 'ML-KEM-keyGen-FIPS203/prompt.json',
+                json_path + 'ML-KEM-keyGen-FIPS203/expectedResults.json')
 
-for x in keygen_kat:
-    #   run keygen
-    (ek, dk)    = nist_mlkem_keygen(bytes.fromhex(x['z']),
-                                    bytes.fromhex(x['d']),
-                                    x['parameterSet'])
-    #   compare
-    tc  = x['parameterSet'] + ' KeyGen/' + str(x['tcId'])
-    if ek == bytes.fromhex(x['ek']) and dk == bytes.fromhex(x['dk']):
-        keygen_pass += 1
-        #print(tc, 'ok')
-    else:
-        keygen_fail += 1
-        print(tc, 'ek ref=', x['ek'])
-        print(tc, 'ek got=', ek.hex())
-        print(tc, 'dk ref=', x['dk'])
-        print(tc, 'dk got=', dk.hex())
+(encaps_kat, decaps_kat) = mlkem_load_encdec(
+                json_path + 'ML-KEM-encapDecap-FIPS203/prompt.json',
+                json_path + 'ML-KEM-encapDecap-FIPS203/expectedResults.json')
 
-print(f'ML-KEM KeyGen: PASS= {keygen_pass}  FAIL= {keygen_fail}')
+def test_mlkem(keygen_func, encaps_func, decaps_func, iut=''):
+    fail = 0
+    fail += mlkem_test_keygen(keygen_kat, keygen_func, iut)
+    fail += mlkem_test_encaps(encaps_kat, encaps_func, iut)
+    fail += mlkem_test_decaps(decaps_kat, decaps_func, iut)
+    print(f'ML-KEM {iut} -- Total FAIL= {fail}')
 
-
-#   Encapsulation tests
-
-encap_pass  = 0
-encap_fail  = 0
-for x in encap_kat:
-
-    #   run encaps
-    (k, c) = nist_mlkem_encaps( bytes.fromhex(x['ek']),
-                                bytes.fromhex(x['m']),
-                                x['parameterSet'])
-
-    #   compare
-    tc  = x['parameterSet'] + ' Encaps/' + str(x['tcId'])
-    if k == bytes.fromhex(x['k']) and c == bytes.fromhex(x['c']):
-        encap_pass += 1
-        #print(tc, 'ok')
-    else:
-        encap_fail += 1
-        print(tc, 'k ref=', x['k'])
-        print(tc, 'k got=', k.hex())
-        print(tc, 'c ref=', x['c'])
-        print(tc, 'c got=', c.hex())
-
-print(f'ML-KEM Encaps: PASS= {encap_pass}  FAIL= {encap_fail}')
-
-
-#   Decapsulation tests
-
-decap_pass  = 0
-decap_fail  = 0
-for x in decap_kat:
-
-    #   run decaps
-    k   = nist_mlkem_decaps(bytes.fromhex(x['c']),
-                            bytes.fromhex(x['dk']),
-                            x['parameterSet'])
-
-    #   compare
-    tc  = x['parameterSet'] + ' Decaps/' + str(x['tcId'])
-    if k == bytes.fromhex(x['k']):
-        decap_pass += 1
-        #print(tc, 'ok')
-    else:
-        decap_fail += 1
-        print(tc, 'k ref=', x['k'])
-        print(tc, 'k got=', k.hex())
-
-print(f'ML-KEM Decaps: PASS= {decap_pass}  FAIL= {decap_fail}')
-
+if __name__ == '__main__':
+    print('no unit tests here: provide cryptographic functions to test.')

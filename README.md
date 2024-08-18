@@ -2,90 +2,72 @@
 
 2024-07-01  Markku-Juhani O. Saarinen  mjos@iki.fi
 
-#   Background
-
-Functional validation of crypto algorithms in the FIPS 140-3 scheme is based on NIST's Automated Cryptographic Validation Test System (ACVTS). This system contains crypto algorithm implementations that effectively serve as the "golden reference" for algorithm validation: They are used to generate randomized test cases in ACVTS.
-
-The crypto implementations used by NIST's [ACVP-Server](https://github.com/usnistgov/ACVP-Server) are written in C# and run on Microsoft's .NET framework (version 6). Recently implementations of the new NIST PQC standards
-Kyber ([Kyber.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/Kyber/Kyber.cs) for [FIPS 203 ML-KEM](https://doi.org/10.6028/NIST.FIPS.203.ipd)),
-Dilithium ([Dilithium.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/Dilithium/Dilithium.cs) for [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204.ipd)), and
-SPHINCS+ ([Slhdsa.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/SLHDSA/Slhdsa.cs) for [FIPS 205 SLH-DSA](https://doi.org/10.6028/NIST.FIPS.205.ipd)) have been added to the repo. These may not be the best or the most elegant implementations, but many will want to ensure functional equivalence to this code for interoperability and certification purposes.
-
-This repo provides a hacky Python interface to run the NIST Reference Kyber and Dilithium implementations on a Linux system ( [Pythonnet](http://pythonnet.github.io/) is available for Mac and Windows too, but I have not tested it. ) There is also code to run tests against the static JSON-format test vectors in the ACVP-Server repo.
-
-Note that the NIST reference implementations absolutely should **not** be used "in production" since no attention has been paid to crucial factors such as resistance against (remote) timing attacks. This is simply not needed in test vector generation. Furthermore, the code is still "alive" and has not been officially released (AFAIK). However, they can be quite useful for functional testing, printing out intermediate values, etc.
-
-**ABSOLUTELY NO WARRANTY. SUPPORT NOT AVAILABLE.** You can report issues but don't expect this repo to be actively maintained.
-
-
-### Wrapper functions for NIST's Kyber code:
-
-These are provided by [nist_mlkem.py](nist_mlkem.py). You may have to adjust this module to find the relevant DLLs for Kyber.
-
-Key Generation:
-```py
-def nist_mlkem_keygen(z, d, param='ML-KEM-768'):
-    """ (ek, dk) = ML-KEM.KeyGen(z, d, param='ML-KEM-768'). """
-```
-
-Encapsulate:
-```py
-def nist_mlkem_encaps(ek, m, param='ML-KEM-768'):
-    """ (K, c) = ML-KEM.Encaps(ek, m, param='ML-KEM-768'). """
-```
-
-Decapsulate:
-```py
-def nist_mlkem_decaps(c, dk, param='ML-KEM-768'):
-    """ K = ML-KEM.Decaps(c, dk, param='ML-KEM-768'). """
-```
-
-Test module [test_mlkem.py](test_mlkem.py) parses the JSON-format Kyber test vectors  in the ACVP-Server repo and executes the related tests using the wrapper functions.
+Updated 2024-08-18 for the release FIPS 203, FIPS 204
 
 ```
-$ python3 test_mlkem.py
-ML-KEM KeyGen: PASS= 75  FAIL= 0
-ML-KEM Encaps: PASS= 75  FAIL= 0
-ML-KEM Decaps: PASS= 30  FAIL= 0
+py-acvp-pqc
+├── fips203.py        	# Python implementation of ML-KEM ("Kyber")
+├── fips204.py          # Python implementation of ML-DSA ("Dilithium")
+├── genvals_mlkem.py    # Python wrapper for ML-KEM in NIST's C# Gen/Vals
+├── genvals_mldsa.py    # Python wrapper for ML-DSA in NIST's C# Gen/Vals
+├── test_mlkem.py       # Parser/tester for ML-KEM ACVP test vectors
+├── test_mldsa.py       # Parser/tester for ML-DSA ACVP test vectors
+├── ACVP-Server         # (Symlink to) NIST's ACVP-Server repo for Gen/Vals
+├── json-copy           # Local copy from ACVP-Server/gen-val/json-files/
+├── Makefile            # Makefile for cleanups
+├── requirements.txt    # Python dependencies
+├── LICENSE             # Unlicense
+└── README.md           # This file
 ```
 
-### Wrapper functions for NIST's Dilithium code:
+#   Testing the Python implementations
 
-These are provided by [nist_mldsa.py](nist_mldsa.py). You may have to adjust this module to find the relevant DLLs for Dilithium.
+You won't need the NIST C# dependencies to run the local Python implementations (or "models") of Kyber and Dilithium. These are self-contained, apart from hash function code (obtainable via `pip3 install pycryptodome`).
 
-Key Generation:
+*   ML-KEM: [fips203.py](fips203.py) is a self-contained implementation of [FIPS 203 ML-KEM](https://doi.org/10.6028/NIST.FIPS.203) a.k.a. Kyber.
+*   ML-DSA: [fips204.py](fips204.py) is a self-contained implementation of [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204) a.k.a. Dilithium.
+*   Parsers: [test_mlkem.py](test_mlkem.py) and [test_mldsa.py](test_mldsa.py).
+*   Test vectors: there's a local copy of relevant json test vectors from NIST in [json-copy](json-copy). These can be synced with [https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files](https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files).
 
-```py
-def nist_mldsa_keygen(seed, param='ML-DSA-65'):
-    """ (pk, sk) = ML-DSA.KeyGen(seed, param='ML-DSA-65'). """
-```
-
-Sign a message:
-```py
-def nist_mldsa_sign(sk, m, det, param='ML-DSA-65'):
-    """ sig = ML-DSA.Sign(sk, M, det, param='ML-DSA-65'). """
-```
-
-Verify a signature:
-```py
-def nist_mldsa_verify(pk, m, sig, param='ML-DSA-65'):
-    """ True/False = ML-DSA.Verify(pk, M, sig, param='ML-DSA-65'). """
-```
-
-Test module [test_mldsa.py](test_mldsa.py) parses the Dilithium test vectors in the ACVP-Server repo and executes the related tests using the wrapper functions.
+The main functions have unit tests:
 
 ```
-$ python3 test_mldsa.py
-ML-DSA KeyGen: PASS= 75  FAIL= 0
-ML-DSA SigGen: PASS= 30  FAIL= 0  SKIP= 30
-ML-DSA SigVer: PASS= 45  FAIL= 0
+$ python3 fips203.py
+ML-KEM KeyGen (fips203.py): PASS= 75  FAIL= 0
+ML-KEM Encaps (fips203.py): PASS= 75  FAIL= 0
+ML-KEM Decaps (fips203.py): PASS= 30  FAIL= 0
+ML-KEM (fips203.py) -- Total FAIL= 0
+```
+_( This indicates success.)_
+
+```
+$ python3 fips204.py
+ML-DSA KeyGen (fips204.py): PASS= 75  FAIL= 0
+ML-DSA SigGen (fips204.py): PASS= 30  FAIL= 0   SKIP= 30
+ML-DSA SigVer (fips204.py): PASS= 45  FAIL= 0
+ML-DSA (fips204.py) -- Total FAIL= 0
 ```
 
 _( If you're curious why 30 test vectors are "skipped," The non-deterministic signature code is indeed non-deterministic and makes an internal call to an RBG. Hence, we're not trying to match those answers. )_
 
-#   Step-by-step Running Instructions
 
-This is very hacky: The followign steps were executed on a fresh install of Ubuntu 24.04 LTS on July 3, 2024 and it worked then. If it doesn't work for you, too bad -- NIST ACVTS code is in flux and .NET6 is at its End of Service in 2024, etc.
+#   NIST Gen/Vals
+
+Functional validation of crypto algorithms in the FIPS 140-3 scheme is based on NIST's Automated Cryptographic Validation Test System (ACVTS). This system contains crypto algorithm implementations that effectively serve as the "golden reference" for algorithm validation: They are used to generate randomized test cases in ACVTS.
+
+The crypto implementations used by NIST's [ACVP-Server](https://github.com/usnistgov/ACVP-Server) are written in C# and run on Microsoft's .NET framework (version 6). Recently implementations of the new NIST PQC standards
+Kyber ([Kyber.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/Kyber/Kyber.cs) for FIPS 203),
+Dilithium ([Dilithium.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/Dilithium/Dilithium.cs) for [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204)), and
+SPHINCS+ ([Slhdsa.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/SLHDSA/Slhdsa.cs) for [FIPS 205 SLH-DSA](https://doi.org/10.6028/NIST.FIPS.205)) have been added to the repo. These may not be the best or the most elegant implementations, but many will want to ensure functional equivalence to this code for interoperability and certification purposes.
+
+We provide Python interface to run the NIST Reference Kyber and Dilithium implementations on a Linux system ( [Pythonnet](http://pythonnet.github.io/) is available for Mac and Windows too, but I have not tested it. ) There is also code to run tests against the static JSON-format test vectors in the ACVP-Server repo.
+
+Note that the NIST reference implementations absolutely should **not** be used "in production" since no attention has been paid to crucial factors such as resistance against (remote) timing attacks. This is simply not needed in test vector generation. Furthermore, the code is still "alive" and has not been officially released (AFAIK). However, they can be quite useful for functional testing, printing out intermediate values, etc.
+
+
+##  Step-by-step Running Instructions
+
+This is very hacky: The following steps were executed on a fresh install of Ubuntu 24.04 LTS on July 3, 2024 and it worked then. If it doesn't work for you, too bad -- NIST ACVTS code is in flux and .NET6 is at its End of Service in 2024, etc.
 
 Install git, if needed, and clone this repo:
 ```
@@ -123,6 +105,7 @@ We can now build the relevant implementation libraries (which are .dll files). O
 ```console
 $ dotnet test gen-val/src/crypto/test/NIST.CVP.ACVTS.Libraries.Crypto.Kyber.Tests/NIST.CVP.ACVTS.Libraries.Crypto.Kyber.Tests.csproj
 $ dotnet test gen-val/src/crypto/test/NIST.CVP.ACVTS.Libraries.Crypto.Dilithium.Tests/NIST.CVP.ACVTS.Libraries.Crypto.Dilithium.Tests.csproj
+$ dotnet test gen-val/src/crypto/test/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests.csproj
 ```
 
 There is quite a lot of output, but we're done here.
@@ -145,15 +128,17 @@ Note that you will have to "enter" the enviroment with `source .venv/bin/activat
 
 Anyway, we should now be able to execute our Kyber and Dilithium test programs:
 ```
-(.venv) $ python3 test_mlkem.py
-ML-KEM KeyGen: PASS= 75  FAIL= 0
-ML-KEM Encaps: PASS= 75  FAIL= 0
-ML-KEM Decaps: PASS= 30  FAIL= 0
+(.venv) $ python3 genvals_mlkem.py
+ML-KEM KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
+ML-KEM Encaps (NIST Gen/Vals): PASS= 75  FAIL= 0
+ML-KEM Decaps (NIST Gen/Vals): PASS= 30  FAIL= 0
+ML-KEM (NIST Gen/Vals) -- Total FAIL= 0
 
-(.venv) $ python3 test_mldsa.py
-ML-DSA KeyGen: PASS= 75  FAIL= 0
-ML-DSA SigGen: PASS= 30  FAIL= 0  SKIP= 30
-ML-DSA SigVer: PASS= 45  FAIL= 0
+(.venv) $ python3 genvals_mldsa.py
+ML-DSA KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
+ML-DSA SigGen (NIST Gen/Vals): PASS= 30  FAIL= 0    SKIP= 30
+ML-DSA SigVer (NIST Gen/Vals): PASS= 45  FAIL= 0
+ML-DSA (NIST Gen/Vals) -- Total FAIL= 0
 ```
 This is a success!
 
