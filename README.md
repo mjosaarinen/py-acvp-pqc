@@ -62,7 +62,7 @@ SPHINCS+ ([Slhdsa.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-v
 
 We provide Python interface to run the NIST Reference Kyber and Dilithium implementations on a Linux system ( [Pythonnet](http://pythonnet.github.io/) is available for Mac and Windows too, but I have not tested it. ) There is also code to run tests against the static JSON-format test vectors in the ACVP-Server repo.
 
-Note that the NIST reference implementations absolutely should **not** be used "in production" since no attention has been paid to crucial factors such as resistance against (remote) timing attacks. This is simply not needed in test vector generation. Furthermore, the code is still "alive" and has not been officially released (AFAIK). However, they can be quite useful for functional testing, printing out intermediate values, etc.
+Note that the NIST reference implementations absolutely should **not** be used "in production" since no attention has been paid to crucial factors such as resistance against (remote) timing attacks. This is simply not needed in test vector generation. 
 
 
 ##  Step-by-step Running Instructions
