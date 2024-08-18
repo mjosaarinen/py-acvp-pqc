@@ -26,7 +26,7 @@ You won't need the NIST C# dependencies to run the local Python implementations 
 
 *   ML-KEM: [fips203.py](fips203.py) is a self-contained implementation of [FIPS 203 ML-KEM](https://doi.org/10.6028/NIST.FIPS.203) a.k.a. Kyber.
 *   ML-DSA: [fips204.py](fips204.py) is a self-contained implementation of [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204) a.k.a. Dilithium.
-*   Parsers: [test_mlkem.py](test_mlkem.py) and [test_mldsa.py](test_mldsa.py).
+*   Test vector json parsers: [test_mlkem.py](test_mlkem.py) and [test_mldsa.py](test_mldsa.py).
 *   Test vectors: there's a local copy of relevant json test vectors from NIST in [json-copy](json-copy). These can be synced with [https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files](https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files).
 
 The main functions have unit tests:
