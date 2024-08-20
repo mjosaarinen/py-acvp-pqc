@@ -2,16 +2,19 @@
 
 2024-07-01  Markku-Juhani O. Saarinen  mjos@iki.fi
 
-Updated 2024-08-18 for the release FIPS 203, FIPS 204
+Updated 2024-08-20 for the release FIPS 203, FIPS 204, FIPS 205.
 
 ```
 py-acvp-pqc
 ├── fips203.py        	# Python implementation of ML-KEM ("Kyber")
 ├── fips204.py          # Python implementation of ML-DSA ("Dilithium")
+├── fips205.py          # Python implementation of SLH-DSA ("SPHINCS+")
 ├── genvals_mlkem.py    # Python wrapper for ML-KEM in NIST's C# Gen/Vals
 ├── genvals_mldsa.py    # Python wrapper for ML-DSA in NIST's C# Gen/Vals
+├── genvals_slhdsa.py   # Python wrapper for SLH-DSA in NIST's C# Gen/Vals
 ├── test_mlkem.py       # Parser/tester for ML-KEM ACVP test vectors
 ├── test_mldsa.py       # Parser/tester for ML-DSA ACVP test vectors
+├── test_slhdsa.py      # Parser/tester for SLH-DSA ACVP test vectors
 ├── ACVP-Server         # (Symlink to) NIST's ACVP-Server repo for Gen/Vals
 ├── json-copy           # Local copy from ACVP-Server/gen-val/json-files/
 ├── Makefile            # Makefile for cleanups
@@ -26,10 +29,11 @@ You won't need the NIST C# dependencies to run the local Python implementations 
 
 *   ML-KEM: [fips203.py](fips203.py) is a self-contained implementation of [FIPS 203 ML-KEM](https://doi.org/10.6028/NIST.FIPS.203) a.k.a. Kyber.
 *   ML-DSA: [fips204.py](fips204.py) is a self-contained implementation of [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204) a.k.a. Dilithium.
+*   SLH-DSA: [fips205.py](fips205.py) is a self-contained implementation of [FIPS 205 SLH-DSA](https://doi.org/10.6028/NIST.FIPS.205) a.k.a. SPHINCS+.
 *   Test vector json parsers: [test_mlkem.py](test_mlkem.py) and [test_mldsa.py](test_mldsa.py).
 *   Test vectors: there's a local copy of relevant json test vectors from NIST in [json-copy](json-copy). These can be synced with [https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files](https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files).
 
-The main functions have unit tests:
+The main functions have unit tests. For ML-KEM:
 
 ```
 $ python3 fips203.py
@@ -40,6 +44,7 @@ ML-KEM (fips203.py) -- Total FAIL= 0
 ```
 _( This indicates success.)_
 
+Running the test for ML_DSA is similar:
 ```
 $ python3 fips204.py
 ML-DSA KeyGen (fips204.py): PASS= 75  FAIL= 0
@@ -50,6 +55,24 @@ ML-DSA (fips204.py) -- Total FAIL= 0
 
 _( If you're curious why 30 test vectors are "skipped," The non-deterministic signature code is indeed non-deterministic and makes an internal call to an RBG. Hence, we're not trying to match those answers. )_
 
+By default the output for SLH-DSA is a bit verbose, as it will take several minutes to run them all:
+
+```
+$ python3 fips205.py
+SLH-DSA-SHA2-128s KeyGen/1 pass
+(.. output truncated ..)
+SLH-DSA-SHAKE-256f KeyGen/40 pass
+SLH-DSA KeyGen (fips205.py): PASS= 40  FAIL= 0
+SLH-DSA-SHA2-192s SigGen/1 pass
+(.. output truncated ..)
+SLH-DSA-SHAKE-128f SigGen/88 pass
+SLH-DSA SigGen (fips205.py): PASS= 88  FAIL= 0	SKIP= 0
+SLH-DSA-SHA2-192s SigVer/1 pass
+(.. output truncated ..)
+SLH-DSA-SHAKE-128f SigVer/45 pass
+SLH-DSA SigVer (fips205.py): PASS= 45  FAIL= 0
+SLH-DSA (fips205.py) -- Total FAIL= 0
+```
 
 #   NIST Gen/Vals
 
@@ -126,7 +149,7 @@ $ source .venv/bin/activate
 
 Note that you will have to "enter" the enviroment with `source .venv/bin/activate` to use pythonnet installed locally this way.
 
-Anyway, we should now be able to execute our Kyber and Dilithium test programs:
+Anyway, assuming that all of the DLLs are in the right places, we should be abole to run our Kyber, Dilithium, and SPHINCS+ tests:
 ```
 (.venv) $ python3 genvals_mlkem.py
 ML-KEM KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
@@ -139,6 +162,21 @@ ML-DSA KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
 ML-DSA SigGen (NIST Gen/Vals): PASS= 30  FAIL= 0    SKIP= 30
 ML-DSA SigVer (NIST Gen/Vals): PASS= 45  FAIL= 0
 ML-DSA (NIST Gen/Vals) -- Total FAIL= 0
+
+(.venv) $ $ python3 genvals_slhdsa.py 
+SLH-DSA-SHA2-128s KeyGen/1 pass
+(.. output truncated ..)
+SLH-DSA-SHAKE-256f KeyGen/40 pass
+SLH-DSA KeyGen (NIST Gen/Vals): PASS= 40  FAIL= 0
+SLH-DSA-SHA2-192s SigGen/1 pass
+(.. output truncated ..)
+SLH-DSA-SHAKE-128f SigGen/88 pass
+SLH-DSA SigGen (NIST Gen/Vals): PASS= 88  FAIL= 0	SKIP= 0
+SLH-DSA-SHA2-192s SigVer/1 pass
+(.. output truncated ..)
+SLH-DSA-SHAKE-128f SigVer/45 pass
+SLH-DSA SigVer (NIST Gen/Vals): PASS= 45  FAIL= 0
+SLH-DSA (NIST Gen/Vals) -- Total FAIL= 0
 ```
 This is a success!
 

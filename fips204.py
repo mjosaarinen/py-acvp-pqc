@@ -7,7 +7,7 @@
 from test_mldsa import test_mldsa
 
 #   hash functions
-from Crypto.Hash import SHAKE128, SHAKE256, SHA3_256, SHA3_512
+from Crypto.Hash import SHAKE128, SHAKE256, SHA3_256, SHA3_512, SHA256, SHA512
 ML_DSA_Q    =   8380417
 ML_DSA_N    =   256
 
@@ -72,6 +72,100 @@ class ML_DSA:
     #   3.7 Use of Symmetric Cryptography
     def h(self, s, l):
         return SHAKE256.new(s).read(l)
+
+    #   Algorithm 2, ML-DSA.Sign(sk, M, ctx)
+    #   XXX: Not covered by test vectors.
+
+    def sign(self, sk, m, ctx, rnd_in=None, param=None):
+        if param != None:
+            self.__init__(param)
+
+        if rnd_in == None:
+            rnd = b'\x00'*32
+        else:
+            rnd = rnd_in
+
+        mp = (  self.integer_to_bytes(0, 1) +
+                self.integer_to_bytes(len(ctx), 1) + ctx + m )
+        sig = self.sign_internal(sk, mp, rnd)
+        return sig
+
+    #   Algorithm 3, ML-DSA.Verify(pk, M, sigma, ctx)
+    #   XXX: Not covered by test vectors.
+
+    def verify(self, pk, m, sig, ctx, param=None):
+        if param != None:
+            self.__init__(param)
+        if len(ctx) > 255:
+            return False
+        mp  = ( self.integer_to_bytes(0, 1) +
+                self.integer_to_bytes(len(ctx), 1) + ctx + m)
+        return self.verify_internal(pk, mp, sig)
+
+    #   Algorithm 4, HashML-DSA.Sign(sk, M, ctx, PH)
+    #   XXX: Not covered by test vectors.
+
+    def hash_ml_dsa_sign(self, sk, m, ctx, ph, rnd_in=None, param=None):
+        if param != None:
+            self.__init__(param)
+        if len(ctx) > 255:
+            return None
+
+        if rnd_in == None:
+            rnd = b'\x00'*32
+        else:
+            rnd = rnd_in
+
+        if ph == 'SHA-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x01])
+            phm = SHA256.new(m).digest()
+        elif ph == 'SHA-512':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x03])
+            phm = SHA512.new(m).digest()
+        elif ph == 'SHAKE128':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0B])
+            phm = SHAKE128.new(m).read(256 // 8)
+        else:
+            return None
+
+        mp  = ( self.integer_to_bytes(1, 1) +
+                self.integer_to_bytes(len(ctx), 1) +
+                oid + phm )
+        sig = self.sign_internal(sk, mp, rnd)
+        return sig
+
+    #   Algorithm 5, HashML-DSA.Verify(pk, M, sig, ctx, PH)
+    #   Note 2024-08-20: Not covered by test vectors.
+
+    def hash_ml_dsa_verify(self, pk, m, sig, ctx, ph, param=None):
+        if param != None:
+            self.__init__(param)
+        if len(ctx) > 255:
+            return None
+
+        if ph == 'SHA-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x01])
+            phm = SHA256.new(m).digest()
+        elif ph == 'SHA-512':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x03])
+            phm = SHA512.new(m).digest()
+        elif ph == 'SHAKE128':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0B])
+            phm = SHAKE128.new(m).read(256 // 8)
+        else:
+            return False
+
+        mp  = ( self.integer_to_bytes(1, 1) +
+                self.integer_to_bytes(len(ctx), 1) +
+                oid + phm )
+        return self.verify_internal(pk, mp, sig)
+
 
     #   Algorithm 6, ML-DSA.KeyGen_internal(xi)
 

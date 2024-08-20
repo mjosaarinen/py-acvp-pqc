@@ -60,7 +60,7 @@ def nist_mldsa_keygen(seed, param='ML-DSA-65'):
     return (pk, sk)
 
 def nist_mldsa_sign(sk, m, rnd, param='ML-DSA-65'):
-    """ sig = ML-DSA.Sign(sk, M, det, param='ML-DSA-65'). """
+    """ sig = ML-DSA.Sign(sk, M, rnd, param='ML-DSA-65'). """
     dilithium = Dilithium(  ml_dsa_ps[param],
                             NativeFastSha.NativeShaFactory(),
                             EntropyProvider(Random800_90()))
