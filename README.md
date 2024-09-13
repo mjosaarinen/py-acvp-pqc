@@ -30,7 +30,7 @@ You won't need the NIST C# dependencies to run the local Python implementations 
 *   ML-KEM: [fips203.py](fips203.py) is a self-contained implementation of [FIPS 203 ML-KEM](https://doi.org/10.6028/NIST.FIPS.203) a.k.a. Kyber.
 *   ML-DSA: [fips204.py](fips204.py) is a self-contained implementation of [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204) a.k.a. Dilithium.
 *   SLH-DSA: [fips205.py](fips205.py) is a self-contained implementation of [FIPS 205 SLH-DSA](https://doi.org/10.6028/NIST.FIPS.205) a.k.a. SPHINCS+.
-*   Test vector json parsers: [test_mlkem.py](test_mlkem.py) and [test_mldsa.py](test_mldsa.py).
+*   Test vector json parsers: [test_mlkem.py](test_mlkem.py), [test_mldsa.py](test_mldsa.py), and [test_slhdsa.py](test_slhdsa.py).
 *   Test vectors: there's a local copy of relevant json test vectors from NIST in [json-copy](json-copy). These can be synced with [https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files](https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files).
 
 The main functions have unit tests. For ML-KEM:
@@ -90,7 +90,7 @@ Note that the NIST reference implementations absolutely should **not** be used "
 
 ##  Step-by-step Running Instructions
 
-This is very hacky: The following steps were executed on a fresh install of Ubuntu 24.04 LTS on July 3, 2024 and it worked then. If it doesn't work for you, too bad -- NIST ACVTS code is in flux and .NET6 is at its End of Service in 2024, etc.
+This is very hacky: The following steps were executed on a fresh install of Ubuntu 24.04 LTS in July-September, 2024. If it doesn't work for you, too bad -- NIST ACVTS code is in flux and .NET6 is at its End of Service in 2024, etc.
 
 Install git, if needed, and clone this repo:
 ```
