@@ -96,7 +96,7 @@ class ML_KEM:
         return SHAKE256.new(s).read(32)
 
     def prf(self, eta, s, b):
-        return SHAKE256.new(s + b.to_bytes()).read(64*eta)
+        return SHAKE256.new(s + bytes([b])).read(64*eta)
 
     #   4.2.1 Conversion and Compression Algorithms
 
@@ -260,7 +260,7 @@ class ML_KEM:
     #   Algorithm 13, K-PKE.KeyGen(d)
 
     def k_pke_keygen(self, d):
-        (rho, sig) = self.g(d + self.k.to_bytes())
+        (rho, sig) = self.g(d + bytes([self.k]))
         # print('# rho:', rho.hex())
         # print('# sigma:', sig.hex())
         n   = 0
@@ -268,7 +268,7 @@ class ML_KEM:
         a   = [ [None]*self.k for _ in range(self.k) ]
         for i in range(self.k):
             for j in range(self.k):
-                a[i][j] = self.sample_ntt(rho + j.to_bytes() + i.to_bytes())
+                a[i][j] = self.sample_ntt(rho + bytes([j, i]))
         # print('# aHat:', a)
         s   = [None]*self.k
         for i in range(self.k):
@@ -303,7 +303,7 @@ class ML_KEM:
         a   = [ [None]*self.k for _ in range(self.k) ]
         for i in range(self.k):
             for j in range(self.k):
-                a[i][j] = self.sample_ntt(rho + j.to_bytes() + i.to_bytes())
+                a[i][j] = self.sample_ntt(rho + bytes([j, i]))
 
         # print('# aHat:"', a)
         y = [None]*self.k
