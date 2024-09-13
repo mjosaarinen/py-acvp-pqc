@@ -1,6 +1,6 @@
 #   test_slhdsa.py
 #   2024-08-19  Markku-Juhani O. Saarinen <mjos@iki.fi>
-#   === SLH-DSA / Dilithium KAT test with json files
+#   === SLH-DSA / SPHINCS+ KAT test with json files
 
 import json
 
