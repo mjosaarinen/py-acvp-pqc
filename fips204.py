@@ -174,7 +174,7 @@ class ML_DSA:
             self.__init__(param)
         # print('# keygen_internal()', param)
         # print('# seed:', xi.hex())
-        se = self.h(xi + self.k.to_bytes() + self.ell.to_bytes(), 128)
+        se = self.h(xi + self.integer_to_bytes(self.k, 1) + self.integer_to_bytes(self.ell, 1), 128)
         rho = se[0:32]
         rhop = se[32:96]
         kk = se[96:128]
@@ -659,7 +659,7 @@ class ML_DSA:
         a = [ [None]*self.ell for _ in range(self.k) ]
         for r in range(self.k):
             for s in range(self.ell):
-                rhop = rho + s.to_bytes() + r.to_bytes()
+                rhop = rho + self.integer_to_bytes(s, 1) + self.integer_to_bytes(r, 1)
                 a[r][s] = self.rej_ntt_poly(rhop)
         return a
 
