@@ -59,6 +59,15 @@ def mldsa_test_keygen(keygen_kat, keygen_func, iut=''):
     print(f'ML-DSA KeyGen {iut}: PASS= {keygen_pass}  FAIL= {keygen_fail}')
     return keygen_fail
 
+def mldsa_print_keygen(keygen_kat, i=0):
+    for x in keygen_kat:
+        print(i, 'keygen', x['parameterSet'])
+        print(i, 'xi', x['seed'])
+        print(i, 'pk', x['pk'])
+        print(i, 'sk', x['sk'])
+        i += 1
+    return i
+
 #   Load signature Generation KATs
 
 def mldsa_load_siggen(req_fn, res_fn):
@@ -86,36 +95,32 @@ def mldsa_load_siggen(req_fn, res_fn):
                     qt.update(t)
             qt['parameterSet'] = alg
             qt['deterministic'] = det
+            if det:
+                qt['rnd'] = '00'*32 #   deterministic signatures: rnd = 00
             siggen_kat += [qt]
     return siggen_kat
+
 
 #   Perform signature generation tests on siggen_func
 
 def mldsa_test_siggen(siggen_kat, siggen_func, iut=''):
-
     siggen_pass = 0
     siggen_fail = 0
-    siggen_skip = 0
+    siggen_skip = 0                 #   can't pass rnd in NIST api
 
     for x in siggen_kat:
         #   generate signature
-        if x['deterministic']:
-            rnd = b'\0'*32          #   deterministic signatures have rnd = 00
-        else:
-            rnd = bytes(range(32))  #   we can't really test these cases
-
         sig = siggen_func(  bytes.fromhex(x['sk']),
                             bytes.fromhex(x['message']),
-                            rnd,
+                            bytes.fromhex(x['rnd']),
                             x['parameterSet'])
 
         #   compare
         tc  = x['parameterSet'] + ' SigGen/' + str(x['tcId'])
-        if sig == bytes.fromhex(x['signature']):
-            siggen_pass += 1
-        elif not x['deterministic']:
-            #   non-determistic signatures are.. non-determinstic
+        if sig == None:
             siggen_skip += 1
+        elif sig == bytes.fromhex(x['signature']):
+            siggen_pass += 1
         else:
             siggen_fail += 1
             print(tc, 'sig ref=', x['signature'])
@@ -125,6 +130,16 @@ def mldsa_test_siggen(siggen_kat, siggen_func, iut=''):
             f'PASS= {siggen_pass}  FAIL= {siggen_fail}  SKIP= {siggen_skip}')
 
     return siggen_fail
+
+def mldsa_print_siggen(siggen_kat, i=0):
+    for x in siggen_kat:
+        print(i, 'siggen', x['parameterSet'])
+        print(i, 'sk', x['sk'])
+        print(i, 'mp', x['message'])
+        print(i, 'rnd', x['rnd'])
+        print(i, 'sig', x['signature'])
+        i += 1
+    return i
 
 #   Load signature verification KATs
 
@@ -196,6 +211,16 @@ def mldsa_test_sigver(sigver_kat, sigver_func, iut=''):
     print(f'ML-DSA SigVer {iut}: PASS= {sigver_pass}  FAIL= {sigver_fail}')
     return sigver_fail
 
+def mldsa_print_sigver(sigver_kat, i=0):
+    for x in sigver_kat:
+        print(i, 'sigver', x['parameterSet'])
+        print(i, 'pk', x['pk'])
+        print(i, 'mp', x['message'])
+        print(i, 'sig', x['signature'])
+        print(i, 'res', int(x['testPassed']))
+        i += 1
+    return i
+
 #   === run the tests ===
 
 #   load all KATs
@@ -223,5 +248,10 @@ def test_mldsa(keygen_func, siggen_func, sigver_func, iut=''):
     fail += mldsa_test_sigver(sigver_kat, sigver_func, iut)
     print(f'ML-DSA {iut} -- Total FAIL= {fail}')
 
+#   if invoked directly, just dump test vectors in an even simpler format
+
 if __name__ == '__main__':
-    print('no unit tests here: provide cryptographic functions to test.')
+    mldsa_print_keygen(keygen_kat)
+    mldsa_print_siggen(siggen_kat)
+    mldsa_print_sigver(sigver_kat)
+

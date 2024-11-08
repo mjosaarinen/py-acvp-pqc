@@ -12,9 +12,9 @@ import os,clr
 
 #   you may have to adjust these paths (need to be absolute!)
 abs_path = os.getcwd() + '/ACVP-Server/gen-val/src/crypto/'
-clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests/bin/Debug/net6.0/NLog.dll')
-clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests/bin/Debug/net6.0/NIST.CVP.ACVTS.Libraries.Common.dll')
-clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests/bin/Debug/net6.0/NIST.CVP.ACVTS.Libraries.Crypto.dll')
+clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests/bin/Debug/net8.0/NLog.dll')
+clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests/bin/Debug/net8.0/NIST.CVP.ACVTS.Libraries.Common.dll')
+clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.SLHDSA.Tests/bin/Debug/net8.0/NIST.CVP.ACVTS.Libraries.Crypto.dll')
 
 #   imports for slh-dsa
 from System.Collections import BitArray

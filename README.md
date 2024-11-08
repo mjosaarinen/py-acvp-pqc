@@ -4,6 +4,8 @@
 
 Updated 2024-08-20 for the release FIPS 203, FIPS 204, FIPS 205.
 
+Updated 2024-11-08 for some new SLH-DSA test vectors, dotnet 8.0.
+
 ```
 py-acvp-pqc
 ├── fips203.py        	# Python implementation of ML-KEM ("Kyber")
@@ -48,7 +50,7 @@ Running the test for ML_DSA is similar:
 ```
 $ python3 fips204.py
 ML-DSA KeyGen (fips204.py): PASS= 75  FAIL= 0
-ML-DSA SigGen (fips204.py): PASS= 30  FAIL= 0   SKIP= 30
+ML-DSA SigGen (fips204.py): PASS= 60  FAIL= 0  SKIP= 0
 ML-DSA SigVer (fips204.py): PASS= 45  FAIL= 0
 ML-DSA (fips204.py) -- Total FAIL= 0
 ```
@@ -105,7 +107,7 @@ Following [Microsoft's instructions for .NET on Ubuntu](https://learn.microsoft.
 ```console
 $ sudo add-apt-repository ppa:dotnet/backports
 (press [ENTER])
-$ sudo apt install dotnet-sdk-6.0
+$ sudo apt install dotnet-sdk-8.0
 ```
 Note that you need the SDK as you're compiling C# code. If you're using a more stripped-down distro than Ubuntu, you will encounter many more dependencies.
 
@@ -159,7 +161,7 @@ ML-KEM (NIST Gen/Vals) -- Total FAIL= 0
 
 (.venv) $ python3 genvals_mldsa.py
 ML-DSA KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
-ML-DSA SigGen (NIST Gen/Vals): PASS= 30  FAIL= 0    SKIP= 30
+ML-DSA SigGen (NIST Gen/Vals): PASS= 30  FAIL= 0  SKIP= 30
 ML-DSA SigVer (NIST Gen/Vals): PASS= 45  FAIL= 0
 ML-DSA (NIST Gen/Vals) -- Total FAIL= 0
 

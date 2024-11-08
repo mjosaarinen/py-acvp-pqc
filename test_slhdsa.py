@@ -61,6 +61,17 @@ def slhdsa_test_keygen(keygen_kat, keygen_func, iut=''):
     print(f'SLH-DSA KeyGen {iut}: PASS= {keygen_pass}  FAIL= {keygen_fail}')
     return keygen_fail
 
+def slhdsa_print_keygen(keygen_kat, i=0):
+    for x in keygen_kat:
+        print(i, 'keygen', x['parameterSet'])
+        print(i, 'skSeed', x['skSeed'])
+        print(i, 'skPrf',  x['skPrf'])
+        print(i, 'pkSeed', x['pkSeed'])
+        print(i, 'pk', x['pk'])
+        print(i, 'sk', x['sk'])
+        i += 1
+    return i
+
 #   Load signature Generation KATs
 
 def slhdsa_load_siggen(req_fn, res_fn):
@@ -125,6 +136,16 @@ def slhdsa_test_siggen(siggen_kat, siggen_func, iut=''):
             f'PASS= {siggen_pass}  FAIL= {siggen_fail}  SKIP= {siggen_skip}')
 
     return siggen_fail
+
+def slhdsa_print_siggen(siggen_kat, i=0):
+    for x in siggen_kat:
+        print(i, 'siggen', x['parameterSet'])
+        print(i, 'sk', x['sk'])
+        print(i, 'mp', x['message'])
+        #print(i, 'rnd', x['rnd'])
+        print(i, 'sig', x['signature'])
+        i += 1
+    return i
 
 #   Load signature verification KATs
 
@@ -197,6 +218,16 @@ def slhdsa_test_sigver(sigver_kat, sigver_func, iut=''):
     print(f'SLH-DSA SigVer {iut}: PASS= {sigver_pass}  FAIL= {sigver_fail}')
     return sigver_fail
 
+def slhdsa_print_sigver(sigver_kat, i=0):
+    for x in sigver_kat:
+        print(i, 'sigver', x['parameterSet'])
+        print(i, 'pk', x['pk'])
+        print(i, 'mp', x['message'])
+        print(i, 'sig', x['signature'])
+        print(i, 'res', int(x['testPassed']))
+        i += 1
+    return i
+
 #   === run the tests ===
 
 #   load all KATs
@@ -223,7 +254,9 @@ def test_slhdsa(keygen_func, siggen_func, sigver_func, iut=''):
     fail += slhdsa_test_sigver(sigver_kat, sigver_func, iut)
     print(f'SLH-DSA {iut} -- Total FAIL= {fail}')
 
-#print(keygen_kat)
+#   if invoked directly, just dump test vectors in an even simpler format
 
 if __name__ == '__main__':
-    print('no unit tests here: provide cryptographic functions to test.')
+    slhdsa_print_keygen(keygen_kat)
+    slhdsa_print_siggen(siggen_kat)
+    slhdsa_print_sigver(sigver_kat)

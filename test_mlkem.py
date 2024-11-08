@@ -62,6 +62,16 @@ def mlkem_test_keygen(keygen_kat, keygen_func, iut=''):
     print(f'ML-KEM KeyGen {iut}: PASS= {keygen_pass}  FAIL= {keygen_fail}')
     return keygen_fail
 
+def mlkem_print_keygen(keygen_kat, i=0):
+    for x in keygen_kat:
+        print(i, 'keygen', x['parameterSet'])
+        print(i, 'd', x['d'])
+        print(i, 'z', x['z'])
+        print(i, 'ek', x['ek'])
+        print(i, 'dk', x['dk'])
+        i += 1
+    return i
+
 #   Load encaps and decaps KATs
 
 def mlkem_load_encdec(req_fn, res_fn):
@@ -126,6 +136,16 @@ def mlkem_test_encaps(encaps_kat, encaps_func, iut=''):
     print(f'ML-KEM Encaps {iut}: PASS= {encaps_pass}  FAIL= {encaps_fail}')
     return encaps_fail
 
+def mlkem_print_encaps(encaps_kat, i=0):
+    for x in encaps_kat:
+        print(i, 'encaps', x['parameterSet'])
+        print(i, 'ek', x['ek'])
+        print(i, 'm', x['m'])
+        print(i, 'K', x['k'])
+        print(i, 'c', x['c'])
+        i += 1
+    return i
+
 #   Perform decapsulation tests on decaps_func
 
 def mlkem_test_decaps(decaps_kat, decaps_func, iut=''):
@@ -151,6 +171,15 @@ def mlkem_test_decaps(decaps_kat, decaps_func, iut=''):
     print(f'ML-KEM Decaps {iut}: PASS= {decaps_pass}  FAIL= {decaps_fail}')
     return decaps_fail
 
+def mlkem_print_decaps(decaps_kat, i=0):
+    for x in decaps_kat:
+        print(i, 'decaps', x['parameterSet'])
+        print(i, 'dk', x['dk'])
+        print(i, 'c', x['c'])
+        print(i, 'K', x['k'])
+        i += 1
+    return i
+
 #   === run the tests ===
 
 #   load all KATs
@@ -172,5 +201,10 @@ def test_mlkem(keygen_func, encaps_func, decaps_func, iut=''):
     fail += mlkem_test_decaps(decaps_kat, decaps_func, iut)
     print(f'ML-KEM {iut} -- Total FAIL= {fail}')
 
+#   if invoked directly, just dump test vectors in an even simpler format
+
 if __name__ == '__main__':
-    print('no unit tests here: provide cryptographic functions to test.')
+    mlkem_print_keygen(keygen_kat)
+    mlkem_print_encaps(encaps_kat)
+    mlkem_print_decaps(decaps_kat)
+

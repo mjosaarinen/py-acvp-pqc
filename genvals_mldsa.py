@@ -12,9 +12,9 @@ import os,clr
 
 #   you may have to adjust these paths (need to be absolute!)
 abs_path = os.getcwd() + '/ACVP-Server/gen-val/src/crypto/'
-clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.Dilithium.Tests/bin/Debug/net6.0/NLog.dll')
-clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.Dilithium.Tests/bin/Debug/net6.0/NIST.CVP.ACVTS.Libraries.Math.dll')
-clr.AddReference(abs_path + 'src/NIST.CVP.ACVTS.Libraries.Crypto/bin/Debug/net6.0/NIST.CVP.ACVTS.Libraries.Crypto.dll')
+clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.Dilithium.Tests/bin/Debug/net8.0/NLog.dll')
+clr.AddReference(abs_path + 'test/NIST.CVP.ACVTS.Libraries.Crypto.Dilithium.Tests/bin/Debug/net8.0/NIST.CVP.ACVTS.Libraries.Math.dll')
+clr.AddReference(abs_path + 'src/NIST.CVP.ACVTS.Libraries.Crypto/bin/Debug/net8.0/NIST.CVP.ACVTS.Libraries.Crypto.dll')
 
 #   imports for dilithium
 from System.Collections import BitArray
@@ -65,6 +65,8 @@ def nist_mldsa_sign(sk, m, rnd, param='ML-DSA-65'):
                             NativeFastSha.NativeShaFactory(),
                             EntropyProvider(Random800_90()))
     det = rnd == b'\0'*32   #   can't pass this in API yet?
+    if not det:
+        return None
     sig = dilithium.Sign(sk, nist_bits(m), det)
     return bytes(sig)
 
