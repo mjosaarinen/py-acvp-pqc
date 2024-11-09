@@ -79,6 +79,8 @@ class ML_DSA:
     def sign(self, sk, m, ctx, rnd_in=None, param=None):
         if param != None:
             self.__init__(param)
+        if len(ctx) > 255:
+            return None
 
         if rnd_in == None:
             rnd = b'\x00'*32
@@ -98,6 +100,7 @@ class ML_DSA:
             self.__init__(param)
         if len(ctx) > 255:
             return False
+
         mp  = ( self.integer_to_bytes(0, 1) +
                 self.integer_to_bytes(len(ctx), 1) + ctx + m)
         return self.verify_internal(pk, mp, sig)
@@ -133,7 +136,7 @@ class ML_DSA:
 
         mp  = ( self.integer_to_bytes(1, 1) +
                 self.integer_to_bytes(len(ctx), 1) +
-                oid + phm )
+                ctx + oid + phm )
         sig = self.sign_internal(sk, mp, rnd)
         return sig
 
@@ -163,9 +166,8 @@ class ML_DSA:
 
         mp  = ( self.integer_to_bytes(1, 1) +
                 self.integer_to_bytes(len(ctx), 1) +
-                oid + phm )
+                ctx + oid + phm )
         return self.verify_internal(pk, mp, sig)
-
 
     #   Algorithm 6, ML-DSA.KeyGen_internal(xi)
 
@@ -174,7 +176,9 @@ class ML_DSA:
             self.__init__(param)
         # print('# keygen_internal()', param)
         # print('# seed:', xi.hex())
-        se = self.h(xi + self.integer_to_bytes(self.k, 1) + self.integer_to_bytes(self.ell, 1), 128)
+        se = self.h(xi +
+                    self.integer_to_bytes(self.k, 1) +
+                    self.integer_to_bytes(self.ell, 1), 128 )
         rho = se[0:32]
         rhop = se[32:96]
         kk = se[96:128]

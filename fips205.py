@@ -88,7 +88,8 @@ class SLH_DSA:
 
     #   initialize
     def __init__(self,  hashname='SHAKE', n=16, h=66,
-                        d=22, hp=3, a=6, k=33, lg_w=4, m=34):
+                        d=22, hp=3, a=6, k=33, lg_w=4, m=34,
+                        rbg=None):
         self.hashname   = hashname
         self.n          = n
         self.h          = h
@@ -134,6 +135,9 @@ class SLH_DSA:
         self.sk_sz  = 4 * self.n
         self.sig_sz = (1 + self.k*(1 + self.a) + self.h +
                         self.d * self.len) * self.n
+
+        #   rbg
+        self.rbg    = rbg
 
     #   10.1.   SLH-DSA Using SHAKE
     def shake256(self, x, l):
@@ -587,6 +591,107 @@ class SLH_DSA:
         pk_fors = self.fors_pk_from_sig(sig_fors, md, pk_seed, adrs)
         return self.ht_verify(pk_fors, sig_ht, pk_seed,
                                 i_tree, i_leaf, pk_root)
+
+    #   XXX Note 2024-11-09: Not covered by test vectors.
+    def slh_keygen(self):
+        """ Algorithm 21, Algorithm 21 slh_keygen()."""
+        if param != None:
+            self.__init__(param)
+        sk_seed = self.rbg(self.n)
+        sk_prf  = self.rbg(self.n)
+        pk_seed = self.rbg(self.n)
+        return slh.slh_keygen_internal(sk_seed, sk_prf, pk_seed)
+
+    #   XXX Note 2024-11-09: Not covered by test vectors.
+    def slh_sign(self, m, ctx, sk, addrnd=None, param=None):
+        """ Algorithm 22, slh_sign(M, ctx, SK)."""
+        if param != None:
+            self.__init__(param)
+        if len(ctx) > 255:
+            return None
+
+        mp = (  self.integer_to_bytes(0, 1) +
+                self.integer_to_bytes(len(ctx), 1) + ctx + m )
+        sig = self.slh_sign_internal(mp, sk, addrnd)
+        return sig
+
+    #   XXX Note 2024-11-09: Not covered by test vectors.
+    def hash_slh_sign(self, m, ctx, ph, sk, addrnd=None, param=None):
+        """ Algorithm 23, hash_slh_sign(M, ctx, PH, SK). """
+        if param != None:
+            self.__init__(param)
+        if len(ctx) > 255:
+            return None
+
+        if ph == 'SHA-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x01])
+            phm = SHA256.new(m).digest()
+        elif ph == 'SHA-512':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x03])
+            phm = SHA512.new(m).digest()
+        elif ph == 'SHAKE128':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0B])
+            phm = SHAKE128.new(m).read(256 // 8)
+        elif ph == 'SHAKE256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0C])
+            phm = SHAKE256.new(m).read(512 // 8)
+        else:
+            return None
+
+        mp  = ( self.integer_to_bytes(1, 1) +
+                self.integer_to_bytes(len(ctx), 1) +
+                ctx + oid + phm )
+        sig = self.slh_sign_internal(sk, mp, rnd)
+        return sig
+
+    #   XXX Note 2024-11-09: Not covered by test vectors.
+    def slh_verify(self, m, sig, ctx, pk, param=None):
+        """ Algorithm 24, slh_verify(M, SIG, ctx, PK)."""
+        if param != None:
+            self.__init__(param)
+        if len(ctx) > 255:
+            return False
+
+        mp  = ( self.integer_to_bytes(0, 1) +
+                self.integer_to_bytes(len(ctx), 1) + ctx + m)
+        return self.slh_verify_internal(mp, sig, pk)
+
+    #   XXX Note 2024-11-09: Not covered by test vectors.
+    def hash_ml_dsa_verify(self, pk, m, sig, ctx, ph, param=None):
+        """ Algorithm 25, hash_slh_verify(M, SIG, ctx, PH, PK)."""
+        if param != None:
+            self.__init__(param)
+        if len(ctx) > 255:
+            return None
+
+        if ph == 'SHA-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x01])
+            phm = SHA256.new(m).digest()
+        elif ph == 'SHA-512':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x03])
+            phm = SHA512.new(m).digest()
+        elif ph == 'SHAKE128':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0B])
+            phm = SHAKE128.new(m).read(256 // 8)
+        elif ph == 'SHAKE256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0C])
+            phm = SHAKE256.new(m).read(512 // 8)
+        else:
+            return None
+
+        mp  = ( self.integer_to_bytes(1, 1) +
+                self.integer_to_bytes(len(ctx), 1) +
+                ctx + oid + phm )
+        return self.slh_verify_internal(mp, sig, pk)
+
 
 #   Section 11: Table 2. SLH-DSA parameter sets
 
