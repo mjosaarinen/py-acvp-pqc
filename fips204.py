@@ -133,6 +133,7 @@ class ML_DSA:
 
         mp  = ( self.integer_to_bytes(1, 1) +
                 self.integer_to_bytes(len(ctx), 1) +
+                ctx +
                 oid + phm )
         sig = self.sign_internal(sk, mp, rnd)
         return sig
@@ -163,6 +164,7 @@ class ML_DSA:
 
         mp  = ( self.integer_to_bytes(1, 1) +
                 self.integer_to_bytes(len(ctx), 1) +
+                ctx +
                 oid + phm )
         return self.verify_internal(pk, mp, sig)
 
