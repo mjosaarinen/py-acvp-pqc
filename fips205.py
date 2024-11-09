@@ -7,7 +7,7 @@
 from test_slhdsa import test_slhdsa
 
 #   hashes
-from Crypto.Hash import SHAKE256, SHA256, SHA512
+from Crypto.Hash import SHAKE128, SHAKE256, SHA256, SHA512
 
 #   A class for handling Addresses (Section 4.2.)
 
