@@ -451,10 +451,11 @@ class ML_DSA:
 
     #   Algorithm 16, SimpleBitPack(w, b)
 
-    def simple_bit_pack(self, w, b_len):
+    def simple_bit_pack(self, w, b):
         z = bytearray(0)
+        bitlen_b = int(b).bit_length()
         for i in range(256):
-            z += self.integer_to_bits(w[i], b_len)
+            z += self.integer_to_bits(w[i], bitlen_b)
         return self.bits_to_bytes(z)
 
     #   Algorithm 17, BitPack(w, a, b)
@@ -468,8 +469,8 @@ class ML_DSA:
 
     #   Algorithm 18, SimpleBitUnpack(v, b)
 
-    def simple_bit_unpack(self, v, b_len):
-        c = b_len
+    def simple_bit_unpack(self, v, b):
+        c = int(b).bit_length()
         z = self.bytes_to_bits(v)
         w = [None]*256
         for i in range(256):
@@ -523,20 +524,21 @@ class ML_DSA:
 
     def pk_encode(self, rho, t1):
         pk = rho
+        b = 2**(int(self.q-1).bit_length() - self.d) - 1
         for t1i in t1:
-            pk += self.simple_bit_pack(t1i,
-                            int(self.q-1).bit_length() - self.d)
+            pk += self.simple_bit_pack(t1i, b)
         return pk
 
     #   Algorithm 23, pkDecode(pk)
 
     def pk_decode(self, pk):
         rho = pk[0:32]
-        bl = int(self.q-1).bit_length() - self.d
+        bitlen_b = int(self.q - 1).bit_length() - self.d
+        b = 2 ** bitlen_b - 1
         t1 = []
         for i in range(self.k):
-            zi = pk[32 + 32*bl*i: 32 + 32*bl*(i + 1)]
-            t1 += [ self.simple_bit_unpack(zi, bl) ]
+            zi = pk[32 + 32*bitlen_b*i: 32 + 32*bitlen_b*(i + 1)]
+            t1 += [ self.simple_bit_unpack(zi, b) ]
         return (rho, t1)
 
     #   Algorithm 24, skEncode(rho, K, tr, s1, s2, t0)
@@ -605,9 +607,9 @@ class ML_DSA:
 
     def w1_encode(self, w1):
         w1t = b''
-        b_len = int((self.q - 1) // (2*self.gam2) - 1).bit_length()
+        b = (self.q - 1) // (2*self.gam2) - 1
         for w1i in w1:
-            w1t += self.simple_bit_pack(w1i, b_len)
+            w1t += self.simple_bit_pack(w1i, b)
         return w1t
 
     #   Algorithm 29, SampleInBall(rho)
