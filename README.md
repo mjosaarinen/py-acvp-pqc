@@ -6,9 +6,14 @@ Updated 2024-08-20 for the release FIPS 203, FIPS 204, FIPS 205.
 
 Updated 2024-11-08 for some new SLH-DSA test vectors, dotnet 8.0.
 
+Updated 2025-01-15 added new external tests for python implementations.
+
+**note** Currently only "internal" functions are tested with NIST gen/vals.
+The Python modules should support all test cases.
+
 ```
 py-acvp-pqc
-├── fips203.py        	# Python implementation of ML-KEM ("Kyber")
+├── fips203.py            # Python implementation of ML-KEM ("Kyber")
 ├── fips204.py          # Python implementation of ML-DSA ("Dilithium")
 ├── fips205.py          # Python implementation of SLH-DSA ("SPHINCS+")
 ├── genvals_mlkem.py    # Python wrapper for ML-KEM in NIST's C# Gen/Vals
@@ -50,12 +55,10 @@ Running the test for ML_DSA is similar:
 ```
 $ python3 fips204.py
 ML-DSA KeyGen (fips204.py): PASS= 75  FAIL= 0
-ML-DSA SigGen (fips204.py): PASS= 60  FAIL= 0  SKIP= 0
-ML-DSA SigVer (fips204.py): PASS= 45  FAIL= 0
+ML-DSA SigGen (fips204.py): PASS= 360  FAIL= 0
+ML-DSA SigVer (fips204.py): PASS= 180  FAIL= 0
 ML-DSA (fips204.py) -- Total FAIL= 0
 ```
-
-_( If you're curious why 30 test vectors are "skipped," The non-deterministic signature code is indeed non-deterministic and makes an internal call to an RBG. Hence, we're not trying to match those answers. )_
 
 By default the output for SLH-DSA is a bit verbose, as it will take several minutes to run them all:
 
@@ -68,7 +71,7 @@ SLH-DSA KeyGen (fips205.py): PASS= 40  FAIL= 0
 SLH-DSA-SHA2-192s SigGen/1 pass
 (.. output truncated ..)
 SLH-DSA-SHAKE-128f SigGen/88 pass
-SLH-DSA SigGen (fips205.py): PASS= 88  FAIL= 0	SKIP= 0
+SLH-DSA SigGen (fips205.py): PASS= 88  FAIL= 0  SKIP= 0
 SLH-DSA-SHA2-192s SigVer/1 pass
 (.. output truncated ..)
 SLH-DSA-SHAKE-128f SigVer/45 pass
@@ -77,6 +80,8 @@ SLH-DSA (fips205.py) -- Total FAIL= 0
 ```
 
 #   NIST Gen/Vals
+
+** CONTINOUSLY EXPERIMENTAL **
 
 Functional validation of crypto algorithms in the FIPS 140-3 scheme is based on NIST's Automated Cryptographic Validation Test System (ACVTS). This system contains crypto algorithm implementations that effectively serve as the "golden reference" for algorithm validation: They are used to generate randomized test cases in ACVTS.
 
@@ -87,12 +92,12 @@ SPHINCS+ ([Slhdsa.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-v
 
 We provide Python interface to run the NIST Reference Kyber and Dilithium implementations on a Linux system ( [Pythonnet](http://pythonnet.github.io/) is available for Mac and Windows too, but I have not tested it. ) There is also code to run tests against the static JSON-format test vectors in the ACVP-Server repo.
 
-Note that the NIST reference implementations absolutely should **not** be used "in production" since no attention has been paid to crucial factors such as resistance against (remote) timing attacks. This is simply not needed in test vector generation. 
+Note that the NIST reference implementations absolutely should **not** be used "in production" since no attention has been paid to crucial factors such as resistance against (remote) timing attacks. This is simply not needed in test vector generation.
 
 
 ##  Step-by-step Running Instructions
 
-This is very hacky: The following steps were executed on a fresh install of Ubuntu 24.04 LTS in July-September, 2024. If it doesn't work for you, too bad -- NIST ACVTS code is in flux and .NET6 is at its End of Service in 2024, etc.
+This is very hacky: The following steps were executed on a fresh install of Ubuntu 24.04 LTS in July-September, 2024. If it doesn't work for you, too bad.
 
 Install git, if needed, and clone this repo:
 ```
@@ -140,7 +145,7 @@ $ cd ..
 
 ### Run our Python Tests
 
-We're using [Pythonnet](http://pythonnet.github.io/) and you will probably have to install it. Let's install venv (if you don't have it already), and use a local environment:
+We're using [Pythonnet](http://pythonnet.github.io/) and you will probably have to install it. As an example, let's install venv, use a local environment:
 
 ```console
 $ sudo apt install python3-venv
@@ -165,7 +170,7 @@ ML-DSA SigGen (NIST Gen/Vals): PASS= 30  FAIL= 0  SKIP= 30
 ML-DSA SigVer (NIST Gen/Vals): PASS= 45  FAIL= 0
 ML-DSA (NIST Gen/Vals) -- Total FAIL= 0
 
-(.venv) $ $ python3 genvals_slhdsa.py 
+(.venv) $ $ python3 genvals_slhdsa.py
 SLH-DSA-SHA2-128s KeyGen/1 pass
 (.. output truncated ..)
 SLH-DSA-SHAKE-256f KeyGen/40 pass
@@ -173,7 +178,7 @@ SLH-DSA KeyGen (NIST Gen/Vals): PASS= 40  FAIL= 0
 SLH-DSA-SHA2-192s SigGen/1 pass
 (.. output truncated ..)
 SLH-DSA-SHAKE-128f SigGen/88 pass
-SLH-DSA SigGen (NIST Gen/Vals): PASS= 88  FAIL= 0	SKIP= 0
+SLH-DSA SigGen (NIST Gen/Vals): PASS= 88  FAIL= 0   SKIP= 0
 SLH-DSA-SHA2-192s SigVer/1 pass
 (.. output truncated ..)
 SLH-DSA-SHAKE-128f SigVer/45 pass

@@ -7,7 +7,10 @@
 from test_mldsa import test_mldsa
 
 #   hash functions
-from Crypto.Hash import SHAKE128, SHAKE256, SHA3_256, SHA3_512, SHA256, SHA512
+from Crypto.Hash import SHAKE128, SHAKE256
+from Crypto.Hash import SHA224, SHA256, SHA384, SHA512
+from Crypto.Hash import SHA3_224, SHA3_256, SHA3_384, SHA3_512
+
 ML_DSA_Q    =   8380417
 ML_DSA_N    =   256
 
@@ -74,18 +77,15 @@ class ML_DSA:
         return SHAKE256.new(s).read(l)
 
     #   Algorithm 2, ML-DSA.Sign(sk, M, ctx)
-    #   XXX: Not covered by test vectors.
 
-    def sign(self, sk, m, ctx, rnd_in=None, param=None):
+    def sign(self, sk, m, ctx=b'', rnd=None, param=None):
         if param != None:
             self.__init__(param)
         if len(ctx) > 255:
             return None
 
-        if rnd_in == None:
+        if rnd == None:
             rnd = b'\x00'*32
-        else:
-            rnd = rnd_in
 
         mp = (  self.integer_to_bytes(0, 1) +
                 self.integer_to_bytes(len(ctx), 1) + ctx + m )
@@ -93,9 +93,8 @@ class ML_DSA:
         return sig
 
     #   Algorithm 3, ML-DSA.Verify(pk, M, sigma, ctx)
-    #   XXX: Not covered by test vectors.
 
-    def verify(self, pk, m, sig, ctx, param=None):
+    def verify(self, pk, m, sig, ctx=b'', param=None):
         if param != None:
             self.__init__(param)
         if len(ctx) > 255:
@@ -105,68 +104,92 @@ class ML_DSA:
                 self.integer_to_bytes(len(ctx), 1) + ctx + m)
         return self.verify_internal(pk, mp, sig)
 
-    #   Algorithm 4, HashML-DSA.Sign(sk, M, ctx, PH)
-    #   XXX: Not covered by test vectors.
+    #   shared formatting routine
 
-    def hash_ml_dsa_sign(self, sk, m, ctx, ph, rnd_in=None, param=None):
+    def hash_ml_dsa_pad(self, m, ctx, ph):
+        if len(ctx) > 255:
+            return None
+
+        if ph == 'SHA2-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x01])
+            phm = SHA256.new(m).digest()
+        elif ph == 'SHA2-384':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x02])
+            phm = SHA384.new(m).digest()
+        elif ph == 'SHA2-512':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x03])
+            phm = SHA512.new(m).digest()
+        elif ph == 'SHA2-224':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x04])
+            phm = SHA224.new(m).digest()
+        elif ph == 'SHA2-512/224':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x05])
+            phm = SHA512.new(m,truncate="224").digest()
+        elif ph == 'SHA2-512/256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x06])
+            phm = SHA512.new(m,truncate="256").digest()
+        elif ph == 'SHA3-224':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x07])
+            phm = SHA3_224.new(m).digest()
+        elif ph == 'SHA3-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x08])
+            phm = SHA3_256.new(m).digest()
+        elif ph == 'SHA3-384':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x09])
+            phm = SHA3_384.new(m).digest()
+        elif ph == 'SHA3-512':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0A])
+            phm = SHA3_512.new(m).digest()
+        elif ph == 'SHAKE-128':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0B])
+            phm = SHAKE128.new(m).read(256 // 8)
+        elif ph == 'SHAKE-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0C])
+            phm = SHAKE256.new(m).read(512 // 8)
+        else:
+            return None
+        mp  = ( self.integer_to_bytes(1, 1) +
+                self.integer_to_bytes(len(ctx), 1) +
+                ctx + oid + phm )
+        return mp
+
+    #   Algorithm 4, HashML-DSA.Sign(sk, M, ctx, PH)
+
+    def hash_ml_dsa_sign(self, sk, m, ctx=b'', ph='SHA2-512', rnd=None, param=None):
         if param != None:
             self.__init__(param)
         if len(ctx) > 255:
             return None
 
-        if rnd_in == None:
+        if rnd == None:
             rnd = b'\x00'*32
-        else:
-            rnd = rnd_in
 
-        if ph == 'SHA-256':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x01])
-            phm = SHA256.new(m).digest()
-        elif ph == 'SHA-512':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x03])
-            phm = SHA512.new(m).digest()
-        elif ph == 'SHAKE128':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x0B])
-            phm = SHAKE128.new(m).read(256 // 8)
-        else:
+        mp = self.hash_ml_dsa_pad(m, ctx, ph)
+        if mp == None:
             return None
-
-        mp  = ( self.integer_to_bytes(1, 1) +
-                self.integer_to_bytes(len(ctx), 1) +
-                ctx + oid + phm )
         sig = self.sign_internal(sk, mp, rnd)
         return sig
 
     #   Algorithm 5, HashML-DSA.Verify(pk, M, sig, ctx, PH)
-    #   Note 2024-08-20: Not covered by test vectors.
 
-    def hash_ml_dsa_verify(self, pk, m, sig, ctx, ph, param=None):
+    def hash_ml_dsa_verify(self, pk, m, sig, ctx=b'', ph='SHA2-512', param=None):
         if param != None:
             self.__init__(param)
-        if len(ctx) > 255:
-            return None
-
-        if ph == 'SHA-256':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x01])
-            phm = SHA256.new(m).digest()
-        elif ph == 'SHA-512':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x03])
-            phm = SHA512.new(m).digest()
-        elif ph == 'SHAKE128':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x0B])
-            phm = SHAKE128.new(m).read(256 // 8)
-        else:
+        mp = self.hash_ml_dsa_pad(m, ctx, ph)
+        if mp == None:
             return False
-
-        mp  = ( self.integer_to_bytes(1, 1) +
-                self.integer_to_bytes(len(ctx), 1) +
-                ctx + oid + phm )
         return self.verify_internal(pk, mp, sig)
 
     #   Algorithm 6, ML-DSA.KeyGen_internal(xi)
@@ -218,7 +241,7 @@ class ML_DSA:
 
     #   Algorithm 7, ML-DSA.Sign_internal(sk, M', rnd)
 
-    def sign_internal(self, sk, mp, rnd, param=None):
+    def sign_internal(self, sk, mp, rnd, param=None, mu=None):
         if param != None:
             self.__init__(param)
 
@@ -239,7 +262,8 @@ class ML_DSA:
         ah = self.expand_a(rho)
         # print('# aHat:', ah)
 
-        mu = self.h(tr + mp, 64)
+        if mu == None:
+            mu = self.h(tr + mp, 64)
         # print('# mu:', mu.hex())
 
         rhopp = self.h(kk + rnd + mu, 64)
@@ -324,7 +348,7 @@ class ML_DSA:
 
     #   Algorithm 8, ML-DSA.Verify_internal(pk, M', sigma)
 
-    def verify_internal(self, pk, mp, sig, param=None):
+    def verify_internal(self, pk, mp, sig, param=None, mu=None):
         if param != None:
             self.__init__(param)
 
@@ -343,7 +367,8 @@ class ML_DSA:
         tr = self.h(pk, 64)
         # print('# tr:', tr.hex())
 
-        mu = self.h(tr + mp, 64)
+        if mu == None:
+            mu = self.h(tr + mp, 64)
         # print('# mu:', mu.hex())
 
         c = self.sample_in_ball(ct)
@@ -904,11 +929,8 @@ class ML_DSA:
                 w[i] = self.add(w[i], self.mul_ntt(m[i][j], v[j]))
         return w
 
-#   run the test on these function
+#   run the test on these functions
 if __name__ == '__main__':
     ml_dsa = ML_DSA()
-    test_mldsa( ml_dsa.keygen_internal,
-                ml_dsa.sign_internal,
-                ml_dsa.verify_internal,
-                '(fips204.py)')
+    test_mldsa( ml_dsa, '(fips204.py)')
 

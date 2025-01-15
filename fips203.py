@@ -238,13 +238,13 @@ class ML_KEM:
     def multiply_ntts(self, f, g):
         h = []
         for ii in range(0, 256, 2):
-            h += self.best_case_multiply(f[ii], f[ii+1], g[ii], g[ii+1],
+            h += self.base_case_multiply(f[ii], f[ii+1], g[ii], g[ii+1],
                                             ML_KEM_ZETA_MUL[ii//2])
         return h
 
     #   Algorithm 12, BaseCaseMultiply(a0, a1, b0, b1, gamma)
 
-    def best_case_multiply(self, a0, a1, b0, b1, gam):
+    def base_case_multiply(self, a0, a1, b0, b1, gam):
         c0  = (a0*b0 + a1*b1*gam) % self.q
         c1  = (a0*b1 + a1*b0) % self.q
         return [ c0, c1 ]

@@ -6,8 +6,10 @@
 #   test_slhdsa is only used by the unit test in the end
 from test_slhdsa import test_slhdsa
 
-#   hashes
-from Crypto.Hash import SHAKE128, SHAKE256, SHA256, SHA512
+#   hash functions
+from Crypto.Hash import SHAKE128, SHAKE256
+from Crypto.Hash import SHA224, SHA256, SHA384, SHA512
+from Crypto.Hash import SHA3_224, SHA3_256, SHA3_384, SHA3_512
 
 #   A class for handling Addresses (Section 4.2.)
 
@@ -81,41 +83,52 @@ class ADRS:
         """ Compressed address ADRDc used with SHA-2."""
         return self.a[3:4] + self.a[8 : 16] + self.a[19:20] + self.a[20:32]
 
+#   Section 11: Table 2. SLH-DSA parameter sets
 
-#   SLH-DSA Implementation
+SLH_DSA_PARAM = {       #   ( hashname, n,  h,  d,  hp, a,  k, lg_w, m )
+    'SLH-DSA-SHA2-128s':    ( 'SHA2',   16, 63, 7,  9,  12, 14, 4,  30 ),
+    'SLH-DSA-SHAKE-128s':   ( 'SHAKE',  16, 63, 7,  9,  12, 14, 4,  30 ),
+    'SLH-DSA-SHA2-128f':    ( 'SHA2',   16, 66, 22, 3,  6,  33, 4,  34 ),
+    'SLH-DSA-SHAKE-128f':   ( 'SHAKE',  16, 66, 22, 3,  6,  33, 4,  34 ),
+    'SLH-DSA-SHA2-192s':    ( 'SHA2',   24, 63, 7,  9,  14, 17, 4,  39 ),
+    'SLH-DSA-SHAKE-192s':   ( 'SHAKE',  24, 63, 7,  9,  14, 17, 4,  39 ),
+    'SLH-DSA-SHA2-192f':    ( 'SHA2',   24, 66, 22, 3,  8,  33, 4,  42 ),
+    'SLH-DSA-SHAKE-192f':   ( 'SHAKE',  24, 66, 22, 3,  8,  33, 4,  42 ),
+    'SLH-DSA-SHA2-256s':    ( 'SHA2',   32, 64, 8,  8,  14, 22, 4,  47 ),
+    'SLH-DSA-SHAKE-256s':   ( 'SHAKE',  32, 64, 8,  8,  14, 22, 4,  47 ),
+    'SLH-DSA-SHA2-256f':    ( 'SHA2',   32, 68, 17, 4,  9,  35, 4,  49 ),
+    'SLH-DSA-SHAKE-256f':   ( 'SHAKE',  32, 68, 17, 4,  9,  35, 4,  49 )
+}
+
+#   SLH-DSA Implementationw
 
 class SLH_DSA:
 
     #   initialize
-    def __init__(self,  hashname='SHAKE', n=16, h=66,
-                        d=22, hp=3, a=6, k=33, lg_w=4, m=34,
-                        rbg=None):
-        self.hashname   = hashname
-        self.n          = n
-        self.h          = h
-        self.d          = d
-        self.hp         = hp
-        self.a          = a
-        self.k          = k
-        self.lg_w       = lg_w
-        self.m          = m
+    def __init__(self,  param='SLH-DSA-SHAKE-128f'):
+
+        #   set parameters
+        if param not in SLH_DSA_PARAM:
+            raise ValueError
+        (self.hashname, self.n, self.h, self.d, self.hp,
+            self.a, self.k, self.lg_w, self.m) = SLH_DSA_PARAM[param]
 
         #   instantiate hash functions
-        if hashname == 'SHAKE':
+        if self.hashname == 'SHAKE':
             self.h_msg      = self.shake_h_msg
             self.prf        = self.shake_prf
             self.prf_msg    = self.shake_prf_msg
             self.h_f        = self.shake_f
             self.h_h        = self.shake_f
             self.h_t        = self.shake_f
-        elif hashname == 'SHA2' and self.n == 16:
+        elif self.hashname == 'SHA2' and self.n == 16:
             self.h_msg      = self.sha256_h_msg
             self.prf        = self.sha256_prf
             self.prf_msg    = self.sha256_prf_msg
             self.h_f        = self.sha256_f
             self.h_h        = self.sha256_f
             self.h_t        = self.sha256_f
-        elif hashname == 'SHA2' and self.n > 16:
+        elif self.hashname == 'SHA2' and self.n > 16:
             self.h_msg      = self.sha512_h_msg
             self.prf        = self.sha256_prf
             self.prf_msg    = self.sha512_prf_msg
@@ -137,7 +150,7 @@ class SLH_DSA:
                         self.d * self.len) * self.n
 
         #   rbg
-        self.rbg    = rbg
+        #self.rbg   = rbg
 
     #   10.1.   SLH-DSA Using SHAKE
     def shake256(self, x, l):
@@ -515,10 +528,10 @@ class SLH_DSA:
         pk  = self.h_t(pk_seed, fors_pk_adrs, root)
         return pk
 
-    def slh_keygen_internal(self, sk_seed, sk_prf, pk_seed):
+    def slh_keygen_internal(self, sk_seed, sk_prf, pk_seed, param=None):
         """ Algorithm 18: slh_keygen_internal()."""
-
-        #   The behavior is different if one performs three distinct
+        if param != None:
+            self.__init__(param)
         adrs    = ADRS()
         adrs.set_layer_address(self.d - 1)
         pk_root = self.xmss_node(sk_seed, 0, self.hp, pk_seed, adrs)
@@ -533,13 +546,15 @@ class SLH_DSA:
         hd      = self.h // self.d
         hhd     = self.h - hd
         ka2     = ka1 + ((hhd + 7) // 8)
-        i_tree  = self.to_int( digest[ka1:ka2], (hhd + 7) // 8) % (2 ** hhd)
+        i_tree  = self.to_int( digest[ka1:ka2], (hhd + 7) // 8) % (2**hhd)
         ka3     = ka2 + ((hd + 7) // 8)
-        i_leaf  = self.to_int( digest[ka2:ka3], (hd + 7) // 8) % (2 ** hd)
+        i_leaf  = self.to_int( digest[ka2:ka3], (hd + 7) // 8) % (2**hd)
         return (md, i_tree, i_leaf)
 
-    def slh_sign_internal(self, m, sk, addrnd):
+    def slh_sign_internal(self, m, sk, addrnd, param=None):
         """ Algorithm 19: slh_sign_internal(M, SK). """
+        if param != None:
+            self.__init__(param)
         adrs    = ADRS()
         sk_seed = sk[       0:  self.n]
         sk_prf  = sk[  self.n:2*self.n]
@@ -568,8 +583,10 @@ class SLH_DSA:
 
         return  sig
 
-    def slh_verify_internal(self, m, sig, pk):
+    def slh_verify_internal(self, m, sig, pk, param=None):
         """ Algorithm 20: slh_verify_internal(M, SIG, PK)."""
+        if param != None:
+            self.__init__(param)
         if len(sig) != self.sig_sz or len(pk) != self.pk_sz:
             return False
 
@@ -592,152 +609,119 @@ class SLH_DSA:
         return self.ht_verify(pk_fors, sig_ht, pk_seed,
                                 i_tree, i_leaf, pk_root)
 
-    #   XXX Note 2024-11-09: Not covered by test vectors.
-    def slh_keygen(self):
+    def slh_keygen(self, param=None):
         """ Algorithm 21, Algorithm 21 slh_keygen()."""
         if param != None:
             self.__init__(param)
         sk_seed = self.rbg(self.n)
         sk_prf  = self.rbg(self.n)
         pk_seed = self.rbg(self.n)
-        return slh.slh_keygen_internal(sk_seed, sk_prf, pk_seed)
+        return self.slh_keygen_internal(sk_seed, sk_prf, pk_seed)
 
-    #   XXX Note 2024-11-09: Not covered by test vectors.
     def slh_sign(self, m, ctx, sk, addrnd=None, param=None):
         """ Algorithm 22, slh_sign(M, ctx, SK)."""
         if param != None:
             self.__init__(param)
         if len(ctx) > 255:
             return None
-
-        mp = (  self.integer_to_bytes(0, 1) +
-                self.integer_to_bytes(len(ctx), 1) + ctx + m )
+        mp = self.to_byte(0, 1) + self.to_byte(len(ctx), 1) + ctx + m
         sig = self.slh_sign_internal(mp, sk, addrnd)
         return sig
 
-    #   XXX Note 2024-11-09: Not covered by test vectors.
-    def hash_slh_sign(self, m, ctx, ph, sk, addrnd=None, param=None):
-        """ Algorithm 23, hash_slh_sign(M, ctx, PH, SK). """
-        if param != None:
-            self.__init__(param)
+    #   shared formatting routine for alg 23 and alg 25
+
+    def hash_slh_dsa_pad(self, m, ctx, ph):
         if len(ctx) > 255:
             return None
 
-        if ph == 'SHA-256':
+        if ph == 'SHA2-256':
             oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
                             0x04, 0x02, 0x01])
             phm = SHA256.new(m).digest()
-        elif ph == 'SHA-512':
+        elif ph == 'SHA2-384':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x02])
+            phm = SHA384.new(m).digest()
+        elif ph == 'SHA2-512':
             oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
                             0x04, 0x02, 0x03])
             phm = SHA512.new(m).digest()
-        elif ph == 'SHAKE128':
+        elif ph == 'SHA2-224':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x04])
+            phm = SHA224.new(m).digest()
+        elif ph == 'SHA2-512/224':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x05])
+            phm = SHA512.new(m,truncate="224").digest()
+        elif ph == 'SHA2-512/256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x06])
+            phm = SHA512.new(m,truncate="256").digest()
+        elif ph == 'SHA3-224':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x07])
+            phm = SHA3_224.new(m).digest()
+        elif ph == 'SHA3-256':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x08])
+            phm = SHA3_256.new(m).digest()
+        elif ph == 'SHA3-384':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x09])
+            phm = SHA3_384.new(m).digest()
+        elif ph == 'SHA3-512':
+            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                            0x04, 0x02, 0x0A])
+            phm = SHA3_512.new(m).digest()
+        elif ph == 'SHAKE-128':
             oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
                             0x04, 0x02, 0x0B])
             phm = SHAKE128.new(m).read(256 // 8)
-        elif ph == 'SHAKE256':
+        elif ph == 'SHAKE-256':
             oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
                             0x04, 0x02, 0x0C])
             phm = SHAKE256.new(m).read(512 // 8)
         else:
             return None
 
-        mp  = ( self.integer_to_bytes(1, 1) +
-                self.integer_to_bytes(len(ctx), 1) +
+        mp  = ( self.to_byte(1, 1) +
+                self.to_byte(len(ctx), 1) +
                 ctx + oid + phm )
-        sig = self.slh_sign_internal(sk, mp, rnd)
+        return mp
+
+    def hash_slh_sign(self, m, ctx, ph, sk, addrnd=None, param=None):
+        """ Algorithm 23, hash_slh_sign(M, ctx, PH, SK). """
+        if param != None:
+            self.__init__(param)
+        mp = self.hash_slh_dsa_pad(m, ctx, ph)
+        if mp == None:
+            return None
+        sig = self.slh_sign_internal(mp, sk, addrnd)
         return sig
 
-    #   XXX Note 2024-11-09: Not covered by test vectors.
     def slh_verify(self, m, sig, ctx, pk, param=None):
         """ Algorithm 24, slh_verify(M, SIG, ctx, PK)."""
         if param != None:
             self.__init__(param)
         if len(ctx) > 255:
             return False
-
-        mp  = ( self.integer_to_bytes(0, 1) +
-                self.integer_to_bytes(len(ctx), 1) + ctx + m)
+        mp  = ( self.to_byte(0, 1) + self.to_byte(len(ctx), 1) + ctx + m)
         return self.slh_verify_internal(mp, sig, pk)
 
-    #   XXX Note 2024-11-09: Not covered by test vectors.
-    def hash_ml_dsa_verify(self, pk, m, sig, ctx, ph, param=None):
+    def hash_slh_verify(self, m, sig, ctx, ph, pk, param=None):
         """ Algorithm 25, hash_slh_verify(M, SIG, ctx, PH, PK)."""
         if param != None:
             self.__init__(param)
         if len(ctx) > 255:
             return None
-
-        if ph == 'SHA-256':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x01])
-            phm = SHA256.new(m).digest()
-        elif ph == 'SHA-512':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x03])
-            phm = SHA512.new(m).digest()
-        elif ph == 'SHAKE128':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x0B])
-            phm = SHAKE128.new(m).read(256 // 8)
-        elif ph == 'SHAKE256':
-            oid = bytes([   0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-                            0x04, 0x02, 0x0C])
-            phm = SHAKE256.new(m).read(512 // 8)
-        else:
-            return None
-
-        mp  = ( self.integer_to_bytes(1, 1) +
-                self.integer_to_bytes(len(ctx), 1) +
-                ctx + oid + phm )
+        mp = self.hash_slh_dsa_pad(m, ctx, ph)
+        if mp == None:
+            return False
         return self.slh_verify_internal(mp, sig, pk)
-
-
-#   Section 11: Table 2. SLH-DSA parameter sets
-
-SLH_DSA_PARAMS  = {
-    'SLH-DSA-SHA2-128s':    SLH_DSA(hashname='SHA2',
-                            n=16, h=63, d=7, hp=9, a=12, k=14, lg_w=4, m=30),
-    'SLH-DSA-SHAKE-128s':   SLH_DSA(hashname='SHAKE',
-                            n=16, h=63, d=7, hp=9, a=12, k=14, lg_w=4, m=30),
-    'SLH-DSA-SHA2-128f':    SLH_DSA(hashname='SHA2',
-                            n=16, h=66, d=22, hp=3, a=6, k=33, lg_w=4, m=34),
-    'SLH-DSA-SHAKE-128f':   SLH_DSA(hashname='SHAKE',
-                            n=16, h=66, d=22, hp=3, a=6, k=33, lg_w=4, m=34),
-    'SLH-DSA-SHA2-192s':    SLH_DSA(hashname='SHA2',
-                            n=24, h=63, d=7, hp=9, a=14, k=17, lg_w=4, m=39),
-    'SLH-DSA-SHAKE-192s':   SLH_DSA(hashname='SHAKE',
-                            n=24, h=63, d=7, hp=9, a=14, k=17, lg_w=4, m=39),
-    'SLH-DSA-SHA2-192f':    SLH_DSA(hashname='SHA2',
-                            n=24, h=66, d=22, hp=3, a=8, k=33, lg_w=4, m=42),
-    'SLH-DSA-SHAKE-192f':   SLH_DSA(hashname='SHAKE',
-                            n=24, h=66, d=22, hp=3, a=8, k=33, lg_w=4, m=42),
-    'SLH-DSA-SHA2-256s':    SLH_DSA(hashname='SHA2',
-                            n=32, h=64, d=8, hp=8, a=14, k=22, lg_w=4, m=47),
-    'SLH-DSA-SHAKE-256s':   SLH_DSA(hashname='SHAKE',
-                            n=32, h=64, d=8, hp=8, a=14, k=22, lg_w=4, m=47),
-    'SLH-DSA-SHA2-256f':    SLH_DSA(hashname='SHA2',
-                            n=32, h=68, d=17, hp=4, a=9, k=35, lg_w=4, m=49),
-    'SLH-DSA-SHAKE-256f':   SLH_DSA(hashname='SHAKE',
-                            n=32, h=68, d=17, hp=4, a=9, k=35, lg_w=4, m=49)
-}
-
-def param_keygen( sk_seed, sk_prf, pk_seed, param):
-    slh = SLH_DSA_PARAMS[param]
-    return slh.slh_keygen_internal(sk_seed, sk_prf, pk_seed)
-
-def param_sign( msg, sk, addrnd, param):
-    slh = SLH_DSA_PARAMS[param]
-    return slh.slh_sign_internal(msg, sk, addrnd)
-
-def param_verify( msg, sig, pk, param):
-    slh = SLH_DSA_PARAMS[param]
-    return slh.slh_verify_internal( msg, sig, pk )
 
 #   run the test on these functions
 if __name__ == '__main__':
-    test_slhdsa(param_keygen,
-                param_sign,
-                param_verify,
-                '(fips205.py)')
+    slh_dsa = SLH_DSA()
+    test_slhdsa(slh_dsa, '(fips205.py)')
 

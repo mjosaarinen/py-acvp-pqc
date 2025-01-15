@@ -30,58 +30,95 @@ from NIST.CVP.ACVTS.Libraries.Crypto.Common.PQC.Dilithium import DilithiumParame
 import System
 System.Console.SetOut(System.IO.TextWriter.Null);
 
-#   ML-DSA parameter sets
-
-ml_dsa_ps = {
-    'ML-DSA-44': DilithiumParameters(DilithiumParameterSet.ML_DSA_44),
-    'ML-DSA-65': DilithiumParameters(DilithiumParameterSet.ML_DSA_65),
-    'ML-DSA-87': DilithiumParameters(DilithiumParameterSet.ML_DSA_87) }
-
-#   helper functions
-
-def nist_bits(x):
-    """ Convert a byte array into a C# BitArray for the NIST library. """
-    l = len(x) * 8
-    y = BitArray(l)
-    for i in range(l):
-        y.Set(l - 1 - i, (x[i >> 3] << (i & 7)) & 0x80 != 0 )
-    return y
-
 #   test wrappers for NIST functions
+class ML_DSA_GV:
 
-def nist_mldsa_keygen(seed, param='ML-DSA-65'):
-    """ (pk, sk) = ML-DSA.KeyGen(seed, param='ML-DSA-65'). """
-    dilithium = Dilithium(  ml_dsa_ps[param],
-                            NativeFastSha.NativeShaFactory(),
-                            EntropyProvider(Random800_90()))
-    ret = dilithium.GenerateKey( nist_bits(seed) )
-    pk  = bytes(ret.Item1)
-    sk  = bytes(ret.Item2)
-    return (pk, sk)
+    #   initialize
+    def __init__(self):
 
-def nist_mldsa_sign(sk, m, rnd, param='ML-DSA-65'):
-    """ sig = ML-DSA.Sign(sk, M, rnd, param='ML-DSA-65'). """
-    dilithium = Dilithium(  ml_dsa_ps[param],
-                            NativeFastSha.NativeShaFactory(),
-                            EntropyProvider(Random800_90()))
-    det = rnd == b'\0'*32   #   can't pass this in API yet?
-    if not det:
+        #   ML-DSA parameter sets
+        self.ml_dsa_ps = {  'ML-DSA-44': DilithiumParameterSet.ML_DSA_44,
+                            'ML-DSA-65': DilithiumParameterSet.ML_DSA_65,
+                            'ML-DSA-87': DilithiumParameterSet.ML_DSA_87 }
+        """
+        'ML-DSA-44': DilithiumParameters(DilithiumParameterSet.ML_DSA_44),
+        'ML-DSA-65': DilithiumParameters(DilithiumParameterSet.ML_DSA_65),
+        'ML-DSA-87': DilithiumParameters(DilithiumParameterSet.ML_DSA_87) }
+        """
+    #   helper functions
+    def nist_bits(self, x):
+        """ Convert a byte array into a C# BitArray for the NIST library. """
+        l = len(x) * 8
+        y = BitArray(l)
+        for i in range(l):
+            y.Set(l - 1 - i, (x[i >> 3] << (i & 7)) & 0x80 != 0 )
+        return y
+
+    #   wrapper functions
+
+    #   Algorithm 2, ML-DSA.Sign(sk, M, ctx)
+
+    def sign(self, sk, m, ctx=b'', rnd=None, param=None):
+        print('ML_DSA_GV.sign() not implemented')
         return None
-    sig = dilithium.Sign(sk, nist_bits(m), det)
-    return bytes(sig)
 
-def nist_mldsa_verify(pk, m, sig, param='ML-DSA-65'):
-    """ True/False = ML-DSA.Verify(pk, M, sig, param='ML-DSA-65'). """
-    dilithium = Dilithium(  ml_dsa_ps[param],
-                            NativeFastSha.NativeShaFactory(),
-                            EntropyProvider(Random800_90()))
-    res = dilithium.Verify(pk, sig, nist_bits(m))
-    return res
+    #   Algorithm 3, ML-DSA.Verify(pk, M, sigma, ctx)
+
+    def verify(self, pk, m, sig, ctx=b'', param=None):
+        print('ML_DSA_GV.verify() not implemented')
+        return None
+
+    #   Algorithm 4, HashML-DSA.Sign(sk, M, ctx, PH)
+
+    def hash_ml_dsa_sign(self, sk, m, ctx=b'', ph='SHA2-512', rnd=None, param=None):
+        print('ML_DSA_GV.hash_ml_dsa_sign() not implemented')
+        return None
+
+    #   Algorithm 5, HashML-DSA.Verify(pk, M, sig, ctx, PH)
+
+    def hash_ml_dsa_verify(self, pk, m, sig, ctx=b'', ph='SHA2-512', param=None):
+        print('ML_DSA_GV.hash_ml_dsa_verify() not implemented')
+        return None
+
+    #   Algorithm 6: ML-DSA.KeyGen_internal(xi)
+
+    def keygen_internal(self, seed, param=None):
+        dilithium = Dilithium(  self.ml_dsa_ps[param],
+                                NativeFastSha.NativeShaFactory(),
+                                EntropyProvider(Random800_90()))
+        ret = dilithium.GenerateKey( self.nist_bits(seed) )
+        pk  = bytes(ret.Item1)
+        sk  = bytes(ret.Item2)
+        return (pk, sk)
+
+    #   Algorithm 7, ML-DSA.Sign_internal(sk, M', rnd)
+
+    def sign_internal(self, sk, mp, rnd, param=None, mu=None):
+        dilithium = Dilithium(  self.ml_dsa_ps[param],
+                                NativeFastSha.NativeShaFactory(),
+                                EntropyProvider(Random800_90()))
+        if mu != None:
+            sig = dilithium.SignExternalMu(sk, mu, rnd)
+        else:
+            sig = dilithium.Sign(sk, mp, rnd)
+        return bytes(sig)
+
+    #   Algorithm 8, ML-DSA.Verify_internal(pk, M', sigma)
+
+    def verify_internal(self, pk, mp, sig, param=None, mu=None):
+        dilithium = Dilithium(  self.ml_dsa_ps[param],
+                                NativeFastSha.NativeShaFactory(),
+                                EntropyProvider(Random800_90()))
+        if mp != None:
+            res = dilithium.Verify(pk, mp, sig)
+            return res
+        print('ML_DSA_GV.verify_internal() external mu not implemented')
+        return None
 
 #   run the test on these functions
 if __name__ == '__main__':
-    test_mldsa( nist_mldsa_keygen,
-                nist_mldsa_sign,
-                nist_mldsa_verify,
+
+    ml_dsa_gv = ML_DSA_GV()
+    test_mldsa( ml_dsa_gv,
                 '(NIST Gen/Vals)')
 
