@@ -104,7 +104,7 @@ $ git clone https://github.com/mjosaarinen/py-acvp-pqc.git
 $ cd py-acvp-pqc
 ```
 
-### Install the .NET 6 SDK
+### Install the .NET 8 SDK
 
 Following [Microsoft's instructions for .NET on Ubuntu](https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu):
 ```console
