@@ -13,7 +13,7 @@ The Python modules should support all test cases.
 
 ```
 py-acvp-pqc
-├── fips203.py            # Python implementation of ML-KEM ("Kyber")
+├── fips203.py          # Python implementation of ML-KEM ("Kyber")
 ├── fips204.py          # Python implementation of ML-DSA ("Dilithium")
 ├── fips205.py          # Python implementation of SLH-DSA ("SPHINCS+")
 ├── genvals_mlkem.py    # Python wrapper for ML-KEM in NIST's C# Gen/Vals
@@ -49,9 +49,8 @@ ML-KEM Encaps (fips203.py): PASS= 75  FAIL= 0
 ML-KEM Decaps (fips203.py): PASS= 30  FAIL= 0
 ML-KEM (fips203.py) -- Total FAIL= 0
 ```
-_( This indicates success.)_
 
-Running the test for ML_DSA is similar:
+Running the test for ML_DSA is similar. Note that 360 signatures will take a while:
 ```
 $ python3 fips204.py
 ML-DSA KeyGen (fips204.py): PASS= 75  FAIL= 0
@@ -66,18 +65,17 @@ By default the output for SLH-DSA is a bit verbose, as it will take several minu
 $ python3 fips205.py
 SLH-DSA-SHA2-128s KeyGen/1 pass
 (.. output truncated ..)
-SLH-DSA-SHAKE-256f KeyGen/40 pass
-SLH-DSA KeyGen (fips205.py): PASS= 40  FAIL= 0
-SLH-DSA-SHA2-192s SigGen/1 pass
+SLH-DSA-SHAKE-256f KeyGen/120 pass
+SLH-DSA KeyGen (fips205.py): PASS= 120  FAIL= 0
 (.. output truncated ..)
-SLH-DSA-SHAKE-128f SigGen/88 pass
-SLH-DSA SigGen (fips205.py): PASS= 88  FAIL= 0  SKIP= 0
-SLH-DSA-SHA2-192s SigVer/1 pass
+SLH-DSA-SHAKE-256s SigGen/624 pass
+SLH-DSA SigGen (fips205.py): PASS= 624  FAIL= 0
 (.. output truncated ..)
-SLH-DSA-SHAKE-128f SigVer/45 pass
-SLH-DSA SigVer (fips205.py): PASS= 45  FAIL= 0
+SLH-DSA-SHAKE-256s SigVer/504 pass
+SLH-DSA SigVer (fips205.py): PASS= 504  FAIL= 0
 SLH-DSA (fips205.py) -- Total FAIL= 0
 ```
+_( This indicates success.)_
 
 #   NIST Gen/Vals
 
@@ -156,34 +154,14 @@ $ source .venv/bin/activate
 
 Note that you will have to "enter" the enviroment with `source .venv/bin/activate` to use pythonnet installed locally this way.
 
-Anyway, assuming that all of the DLLs are in the right places, we should be abole to run our Kyber, Dilithium, and SPHINCS+ tests:
+Anyway, assuming that all of the DLLs are in the right places, we should be abole to run our Kyber, Dilithium, and SPHINCS+ tests: Note however that many of the "external api" tests for the Gen/Vals wrapper are currently skipped.
 ```
 (.venv) $ python3 genvals_mlkem.py
 ML-KEM KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
 ML-KEM Encaps (NIST Gen/Vals): PASS= 75  FAIL= 0
 ML-KEM Decaps (NIST Gen/Vals): PASS= 30  FAIL= 0
 ML-KEM (NIST Gen/Vals) -- Total FAIL= 0
-
-(.venv) $ python3 genvals_mldsa.py
-ML-DSA KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
-ML-DSA SigGen (NIST Gen/Vals): PASS= 30  FAIL= 0  SKIP= 30
-ML-DSA SigVer (NIST Gen/Vals): PASS= 45  FAIL= 0
-ML-DSA (NIST Gen/Vals) -- Total FAIL= 0
-
-(.venv) $ $ python3 genvals_slhdsa.py
-SLH-DSA-SHA2-128s KeyGen/1 pass
-(.. output truncated ..)
-SLH-DSA-SHAKE-256f KeyGen/40 pass
-SLH-DSA KeyGen (NIST Gen/Vals): PASS= 40  FAIL= 0
-SLH-DSA-SHA2-192s SigGen/1 pass
-(.. output truncated ..)
-SLH-DSA-SHAKE-128f SigGen/88 pass
-SLH-DSA SigGen (NIST Gen/Vals): PASS= 88  FAIL= 0   SKIP= 0
-SLH-DSA-SHA2-192s SigVer/1 pass
-(.. output truncated ..)
-SLH-DSA-SHAKE-128f SigVer/45 pass
-SLH-DSA SigVer (NIST Gen/Vals): PASS= 45  FAIL= 0
-SLH-DSA (NIST Gen/Vals) -- Total FAIL= 0
 ```
+
 This is a success!
 
