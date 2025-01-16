@@ -400,7 +400,6 @@ class ML_KEM:
     def decaps_internal(self, dk, c, param=None):
         if param != None:
             self.__init__(param)
-        (k, eta1, eta2, du, dv) = ML_KEM_PARAM[param]
         dk_pke = dk[0 : 384*self.k]
         ek_pke = dk[384*self.k : 768*self.k + 32]
         h = dk[768*self.k + 32 : 768*self.k + 64]
