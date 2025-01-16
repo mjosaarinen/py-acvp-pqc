@@ -6,10 +6,9 @@ Updated 2024-08-20 for the release FIPS 203, FIPS 204, FIPS 205.
 
 Updated 2024-11-08 for some new SLH-DSA test vectors, dotnet 8.0.
 
-Updated 2025-01-15 added new external tests for python implementations.
+Updated 2025-01-15 and added new external tests and interfaces for the Python implementations.
 
-**note** Currently only "internal" functions are tested with NIST gen/vals.
-The Python modules should support all test cases.
+**note:** Currently, only "internal" functions are implemented in the NIST gen/values wrappers. Only the Python implementations support all interfaces and pass all test cases.
 
 ```
 py-acvp-pqc
@@ -32,7 +31,7 @@ py-acvp-pqc
 
 #   Testing the Python implementations
 
-You won't need the NIST C# dependencies to run the local Python implementations (or "models") of Kyber and Dilithium. These are self-contained, apart from hash function code (obtainable via `pip3 install pycryptodome`).
+You won't need the NIST C# code to run and test the local Python implementations (or "models") of Kyber, Dilithium and Sphincs+. These are self-contained, apart from the hash function code (obtainable via `pip3 install pycryptodome`).
 
 *   ML-KEM: [fips203.py](fips203.py) is a self-contained implementation of [FIPS 203 ML-KEM](https://doi.org/10.6028/NIST.FIPS.203) a.k.a. Kyber.
 *   ML-DSA: [fips204.py](fips204.py) is a self-contained implementation of [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204) a.k.a. Dilithium.
@@ -40,7 +39,9 @@ You won't need the NIST C# dependencies to run the local Python implementations 
 *   Test vector json parsers: [test_mlkem.py](test_mlkem.py), [test_mldsa.py](test_mldsa.py), and [test_slhdsa.py](test_slhdsa.py).
 *   Test vectors: there's a local copy of relevant json test vectors from NIST in [json-copy](json-copy). These can be synced with [https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files](https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files).
 
-The main functions have unit tests. For ML-KEM:
+Note that no attempt is made for performance optimization, constant time, etc. Instead, this code tries to mirror the specifications as closely as possible. One shouldn't use this code in applications, but it can be very helpful when developing "real" implementations- Python code is easy to use to print intermediate  values, etc.
+
+The main functions have unit tests with NIST test vectors. For ML-KEM:
 
 ```
 $ python3 fips203.py
@@ -59,7 +60,7 @@ ML-DSA SigVer (fips204.py): PASS= 180  FAIL= 0
 ML-DSA (fips204.py) -- Total FAIL= 0
 ```
 
-By default the output for SLH-DSA is a bit verbose, as it will take several minutes to run them all:
+By default, the output for SLH-DSA is a bit verbose, as it will take several minutes to run them all:
 
 ```
 $ python3 fips205.py
@@ -79,16 +80,16 @@ _( This indicates success.)_
 
 #   NIST Gen/Vals
 
-** CONTINOUSLY EXPERIMENTAL **
+** CONTINUOUSLY EXPERIMENTAL **
 
 Functional validation of crypto algorithms in the FIPS 140-3 scheme is based on NIST's Automated Cryptographic Validation Test System (ACVTS). This system contains crypto algorithm implementations that effectively serve as the "golden reference" for algorithm validation: They are used to generate randomized test cases in ACVTS.
 
-The crypto implementations used by NIST's [ACVP-Server](https://github.com/usnistgov/ACVP-Server) are written in C# and run on Microsoft's .NET framework (version 6). Recently implementations of the new NIST PQC standards
+The crypto implementations used by NIST's [ACVP-Server](https://github.com/usnistgov/ACVP-Server) are written in C# and run on Microsoft's .NET framework (version 6). Recently, implementations of the new NIST PQC standards
 Kyber ([Kyber.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/Kyber/Kyber.cs) for FIPS 203),
 Dilithium ([Dilithium.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/Dilithium/Dilithium.cs) for [FIPS 204 ML-DSA](https://doi.org/10.6028/NIST.FIPS.204)), and
 SPHINCS+ ([Slhdsa.cs](https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/src/crypto/src/NIST.CVP.ACVTS.Libraries.Crypto/SLHDSA/Slhdsa.cs) for [FIPS 205 SLH-DSA](https://doi.org/10.6028/NIST.FIPS.205)) have been added to the repo. These may not be the best or the most elegant implementations, but many will want to ensure functional equivalence to this code for interoperability and certification purposes.
 
-We provide Python interface to run the NIST Reference Kyber and Dilithium implementations on a Linux system ( [Pythonnet](http://pythonnet.github.io/) is available for Mac and Windows too, but I have not tested it. ) There is also code to run tests against the static JSON-format test vectors in the ACVP-Server repo.
+We provide a Python interface to run the NIST Reference Kyber and Dilithium implementations on a Linux system ( [Pythonnet](http://pythonnet.github.io/) is available for Mac and Windows, too, but I have not tested it. ) There is also code to run tests against the static JSON-format test vectors in the ACVP-Server repo.
 
 Note that the NIST reference implementations absolutely should **not** be used "in production" since no attention has been paid to crucial factors such as resistance against (remote) timing attacks. This is simply not needed in test vector generation.
 
@@ -143,7 +144,7 @@ $ cd ..
 
 ### Run our Python Tests
 
-We're using [Pythonnet](http://pythonnet.github.io/) and you will probably have to install it. As an example, let's install venv, use a local environment:
+We're using [Pythonnet](http://pythonnet.github.io/) and you will probably have to install it. As an example, let's install venv, and use a local environment:
 
 ```console
 $ sudo apt install python3-venv
@@ -152,9 +153,9 @@ $ source .venv/bin/activate
 (.venv) $ pip3 install pythonnet
 ```
 
-Note that you will have to "enter" the enviroment with `source .venv/bin/activate` to use pythonnet installed locally this way.
+Note that you will have to "enter" the environment with `source .venv/bin/activate` to use Pythonnet installed this way locally.
 
-Anyway, assuming that all of the DLLs are in the right places, we should be abole to run our Kyber, Dilithium, and SPHINCS+ tests: Note however that many of the "external api" tests for the Gen/Vals wrapper are currently skipped.
+Anyway, assuming that all of the DLLs are in the right places, we should be able to run our Kyber, Dilithium, and SPHINCS+ tests. Note, however, that many of the "external API" tests for the Gen/Vals wrapper are currently skipped.
 ```
 (.venv) $ python3 genvals_mlkem.py
 ML-KEM KeyGen (NIST Gen/Vals): PASS= 75  FAIL= 0
