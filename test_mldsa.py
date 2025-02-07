@@ -313,7 +313,10 @@ def mldsa_print_sigver(sigver_kat, i=0):
     for x in sigver_kat:
         print(i, 'sigver', x['parameterSet'])
         print(i, 'pk', x['pk'])
-        print(i, 'mp', x['message'])
+        if 'message' in x:
+            print(i, 'mp', x['message'])
+        if 'mu' in x:
+            print(i, 'mu', x['mu'])
         print(i, 'sig', x['signature'])
         print(i, 'res', int(x['testPassed']))
         i += 1
