@@ -51,11 +51,11 @@ ML-KEM Decaps (fips203.py): PASS= 30  FAIL= 0
 ML-KEM (fips203.py) -- Total FAIL= 0
 ```
 
-Running the test for ML_DSA is similar. Note that 360 signatures will take a while:
+Running the test for ML_DSA is similar. Note that 420 signatures will take a while to create:
 ```
 $ python3 fips204.py
 ML-DSA KeyGen (fips204.py): PASS= 75  FAIL= 0
-ML-DSA SigGen (fips204.py): PASS= 360  FAIL= 0
+ML-DSA SigGen (fips204.py): PASS= 420  FAIL= 0
 ML-DSA SigVer (fips204.py): PASS= 180  FAIL= 0
 ML-DSA (fips204.py) -- Total FAIL= 0
 ```
@@ -107,13 +107,11 @@ $ cd py-acvp-pqc
 
 ### Install the .NET 8 SDK
 
-Following [Microsoft's instructions for .NET on Ubuntu](https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu):
+Note that you need the SDK as you're compiling C# code. These are directly packaged for Ubuntu:
 ```console
-$ sudo add-apt-repository ppa:dotnet/backports
-(press [ENTER])
 $ sudo apt install dotnet-sdk-8.0
 ```
-Note that you need the SDK as you're compiling C# code. If you're using a more stripped-down distro than Ubuntu, you will encounter many more dependencies.
+If you're using a more stripped-down distro than Ubuntu, you will encounter many more dependencies.
 
 ### Build the needed .dll files
 
